@@ -45,6 +45,3 @@ You can also use `run.ps1` or `run.cmd` inside each app folder.
 - Orchestrator: `Server/scripts/dev-orchestrator.mjs`
 - Shared static server: `Server/scripts/serve-app.mjs`
 - Runtime ports file: `Server/.runtime/ports.json`
-
-
-edited 
