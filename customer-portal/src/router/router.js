@@ -41,11 +41,15 @@ export function initRouter({ outletId }) {
         document.title = activeRoute.title;
         outlet.innerHTML = html;
 
-        const routeModule = await import(activeRoute.view.js);
+        // بننظف المسار ونرجع خطوتين لورا عشان الـ import يقرأ من الـ Root صح
+        const cleanPath = activeRoute.view.js.replace(/^\.\//, ""); 
+        const modulePath = "../../" + cleanPath;
+        
+        const routeModule = await import(modulePath);
         currentRouteModule = routeModule;
 
         if (routeModule.mount) {
-            routeModule.mount(outlet);
+            await routeModule.mount(outlet);
         }
 
         setActiveLink(activeRoute.path);
@@ -87,7 +91,7 @@ export function initRouter({ outletId }) {
     }
 
     function setActiveLink(pathname) {
-        const navLinks = document.querySelectorAll(".navbar__link[data-route]");
+        const navLinks = document.querySelectorAll(".nav-link[data-route]");
 
         navLinks.forEach((link) => {
             const linkRoute = link.getAttribute("data-route");

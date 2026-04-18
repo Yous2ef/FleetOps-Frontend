@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Delivered - FleetOps</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        /* --- الأساسيات --- */
+        body {
+            background-color: #ffffff;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        /* حاوية متجاوبة (تفتح في الشاشات الكبيرة وتقفل في الموبايل) */
+        .main-container {
+            width: 100%;
+            max-width: 1200px; /* العرض الأقصى عشان الكروت ماتفرشخس */
+            margin: 0 auto;
+            padding: 40px 5%;
+        }
+
+        /* نظام العواميد للـ Responsive */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* موبايل: عمود واحد */
+            gap: 24px;
+        }
+
+        @media (min-width: 992px) {
+            .content-grid {
+                grid-template-columns: 1fr 1fr; /* ديسكتوب: عمودين متساويين */
+                align-items: start;
+            }
+        }
+
+        /* --- الكروت العامة --- */
+        .custom-card {
+            background-color: #ffffff;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid #f0f2f5;
+            margin-bottom: 24px; /* مسافة بين الكروت لو تحت بعض */
+        }
+
+        .card-soft-blue {
+            background-color: #f4f7fb;
+            border: none;
+        }
+
+        /* --- Card 1: Delivered Header --- */
+        .success-icon-wrap {
+            width: 80px;
+            height: 80px;
+            background-color: #056c45;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 10px 25px rgba(5, 108, 69, 0.3);
+        }
+
+        .success-icon-wrap i { color: white; font-size: 2.5rem; }
+
+        /* --- Card 2: Proof of Delivery --- */
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #7b8fae;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        .signature-box {
+            width: 80px;
+            height: 60px;
+            border: 1px dashed #c2cce0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8faff;
+            margin-top: 15px;
+        }
+        
+        .signature-img {
+            background-color: #333; /* Placeholder for signature */
+            width: 60px;
+            height: 40px;
+            border-radius: 4px;
+        }
+
+        /* --- Card 3: Map --- */
+        .map-card {
+            background: linear-gradient(to bottom, #dbe9e6, #e6f0ed);
+            border-radius: 24px;
+            height: 350px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 20px;
+            border: none;
+            overflow: hidden;
+        }
+
+        .huge-pin {
+            font-size: 10rem;
+            color: #c9302c; /* أحمر داكن */
+            text-shadow: 0 15px 30px rgba(201, 48, 44, 0.3);
+            margin-bottom: -40px; /* تظبيط مكان الـ Badge */
+            z-index: 2;
+        }
+
+        .map-badge {
+            background-color: white;
+            color: #0b2240;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            z-index: 3;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+        }
+
+        /* --- Card 4: Feedback Form --- */
+        .stars-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .star-icon {
+            font-size: 2rem;
+            color: #a0aab8;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .star-icon.active { color: #f39c12; }
+        .star-icon:hover { transform: scale(1.1); }
+
+        .feedback-pills {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .pill-btn {
+            background-color: white;
+            color: #4a5c7a;
+            border: 1px solid #d1d8e6;
+            border-radius: 25px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .pill-btn.active {
+            background-color: #0b2240;
+            color: white;
+            border-color: #0b2240;
+        }
+
+        .custom-textarea {
+            border: none;
+            border-radius: 16px;
+            padding: 20px;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            resize: none;
+            margin-bottom: 20px;
+        }
+        .custom-textarea:focus { box-shadow: 0 0 0 2px #056c45; outline: none; }
+
+        .submit-btn {
+            background-color: #d1d8e6; /* لون مقفول مبدئياً */
+            color: #7b8fae;
+            border-radius: 16px;
+            padding: 16px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            border: none;
+            width: 100%;
+            transition: 0.3s;
+            cursor: not-allowed;
+        }
+
+        .submit-btn.ready {
+            background-color: #0b2240; /* أزرق غامق لما يجهز */
+            color: white;
+            cursor: pointer;
+        }
+        .submit-btn.ready:hover { background-color: #1a2a40; }
+
+        /* --- Card 5: Timeline --- */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+            margin-top: 20px;
+        }
+        
+        /* الخط الأخضر المتصل */
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 14px;
+            top: 5px;
+            bottom: 25px;
+            width: 2px;
+            background-color: #056c45;
+        }
+
+        .timeline-item { position: relative; margin-bottom: 35px; }
+        .timeline-item:last-child { margin-bottom: 0; }
+
+        .timeline-dot {
+            position: absolute;
+            left: -40px;
+            top: 0;
+            width: 30px;
+            height: 30px;
+            background-color: #056c45;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 2;
+            font-size: 1.2rem;
+        }
+
+        .timeline-title { font-weight: 700; font-size: 1.05rem; color: #0b2240; margin-bottom: 2px; }
+        .timeline-time { font-size: 0.85rem; color: #7b8fae; }
+         /* --- Bottom Navigation --- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0 15px 0;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+            border-radius: 20px 20px 0 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            text-align: center;
+            color: #a0aab8;
+            font-size: 0.75rem;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 25%;
+            transition: 0.2s;
+        }
+
+        .nav-item i { font-size: 1.2rem; }
+        .nav-item.active { color: #056c45; font-weight: 600; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        
+        <div class="content-grid">
+            
+            <div class="d-flex flex-column">
+                
+                <div class="custom-card card-soft-blue text-center pb-5">
+                    <div class="success-icon-wrap">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <h2 class="fw-bold" style="color: #0b2240; font-size: 2rem;">Delivered!</h2>
+                    <div style="color: #5c7094; font-size: 1rem;">10:47 AM, Oct 24</div>
+                </div>
+
+                <div class="custom-card">
+                    <div class="section-label">Proof of Delivery</div>
+                    <h5 class="fw-bold" style="color: #0b2240; line-height: 1.5;">Delivered at 124 Fleet Way, Suite 402</h5>
+                    <div style="color: #5c7094; margin-top: 10px;">Signed by: <span class="fw-bold" style="color: #0b2240;">John Doe</span></div>
+                    
+                    <div class="signature-box">
+                        <div class="signature-img"></div>
+                    </div>
+                </div>
+
+                <div class="custom-card">
+                    <div class="section-label">Delivery Timeline</div>
+                    
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-dot"><i class="bi bi-check"></i></div>
+                            <div class="timeline-title">Order Received</div>
+                            <div class="timeline-time">Oct 22, 09:15 AM</div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-dot"><i class="bi bi-check"></i></div>
+                            <div class="timeline-title">In Transit</div>
+                            <div class="timeline-time">Oct 23, 02:40 PM</div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-dot"><i class="bi bi-check"></i></div>
+                            <div class="timeline-title">Out for Delivery</div>
+                            <div class="timeline-time">Oct 24, 08:30 AM</div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-dot"><i class="bi bi-check"></i></div>
+                            <div class="timeline-title">Delivered</div>
+                            <div class="timeline-time">Oct 24, 10:47 AM</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <div class="d-flex flex-column">
+                
+                <div class="custom-card map-card p-0">
+                    <i class="bi bi-geo-alt-fill huge-pin"></i>
+                    <div class="map-badge">
+                        <i class="bi bi-circle-fill text-success" style="font-size: 0.6rem; margin-right: 5px;"></i> Final Destination
+                    </div>
+                </div>
+
+                <div class="custom-card card-soft-blue text-center">
+                    <h3 class="fw-bold" style="color: #0b2240;">How was your delivery?</h3>
+                    <p style="color: #5c7094; font-size: 0.95rem;">Your feedback helps us improve our service.</p>
+                    
+                    <div class="stars-container" id="starRating">
+                        <i class="bi bi-star star-icon" data-val="1"></i>
+                        <i class="bi bi-star star-icon" data-val="2"></i>
+                        <i class="bi bi-star star-icon" data-val="3"></i>
+                        <i class="bi bi-star star-icon" data-val="4"></i>
+                        <i class="bi bi-star star-icon" data-val="5"></i>
+                    </div>
+
+                    <div style="font-size: 0.9rem; font-weight: 700; color: #4a5c7a; margin-bottom: 15px;">Was your parcel in good condition?</div>
+                    
+                    <div class="feedback-pills" id="conditionPills">
+                        <div class="pill-btn">Excellent</div>
+                        <div class="pill-btn">Good</div>
+                        <div class="pill-btn">Damaged</div>
+                    </div>
+
+                    <div style="font-size: 0.9rem; font-weight: 700; color: #4a5c7a; text-align: left; margin-bottom: 10px;">Anything to add?</div>
+                    
+                    <textarea class="form-control custom-textarea" rows="4" placeholder="Write your comments here..." id="feedbackText"></textarea>
+                    
+                    <button class="submit-btn" id="submitBtn">Submit Feedback</button>
+                </div>
+
+            </div> </div>
+            <nav class="bottom-nav">
+        <a href="./deliveryFaild.html" class="nav-item">
+            <i class="bi bi-layout-text-window"></i>
+            <span>STATUS</span>
+        </a>
+        <a href="./arrivingAlerts.html" class="nav-item">
+            <i class="bi bi-map"></i>
+            <span>TRACKING</span>
+        </a>
+        <a href="./delivered.html" class="nav-item active">
+            <i class="bi bi-receipt-cutoff"></i>
+            <span>DETAILS</span>
+        </a>
+        <a href="./linkExpired.html" class="nav-item ">
+            <i class="bi bi-question-circle-fill"></i>
+            <span>SUPPORT</span>
+        </a>
+    </nav>
+        </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('.star-icon');
+            const pills = document.querySelectorAll('.pill-btn');
+            const textarea = document.getElementById('feedbackText');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            let hasRating = false;
+            let hasCondition = false;
+
+            // دالة تشغيل زر الـ Submit
+            function checkFormReady() {
+                if(hasRating || hasCondition || textarea.value.trim().length > 0) {
+                    submitBtn.classList.add('ready');
+                    submitBtn.disabled = false;
+                } else {
+                    submitBtn.classList.remove('ready');
+                    submitBtn.disabled = true;
+                }
+            }
+
+            // منطق النجوم (Star Rating)
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    let rating = this.getAttribute('data-val');
+                    hasRating = true;
+                    
+                    // شيل التلوين من كله الأول
+                    stars.forEach(s => {
+                        s.classList.remove('bi-star-fill', 'active');
+                        s.classList.add('bi-star');
+                    });
+                    
+                    // لون لحد النجمة اللي انداس عليها
+                    stars.forEach(s => {
+                        if(s.getAttribute('data-val') <= rating) {
+                            s.classList.remove('bi-star');
+                            s.classList.add('bi-star-fill', 'active');
+                        }
+                    });
+                    checkFormReady();
+                });
+            });
+
+            // منطق أزرار الحالة (Condition Pills)
+            pills.forEach(pill => {
+                pill.addEventListener('click', function() {
+                    hasCondition = true;
+                    // شيل الـ active من الباقي
+                    pills.forEach(p => p.classList.remove('active'));
+                    // حطه على اللي انداس عليه
+                    this.classList.add('active');
+                    checkFormReady();
+                });
+            });
+
+            // مراقبة الـ Textarea
+            textarea.addEventListener('input', checkFormReady);
+
+            // أكشن الـ Submit
+            submitBtn.addEventListener('click', function() {
+                if(this.classList.contains('ready')) {
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Sending...';
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="bi bi-check-lg"></i> Thank You!';
+                        this.style.backgroundColor = '#056c45'; // يقلب أخضر
+                    }, 1000);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,28 +1,35 @@
-import api from "/shared/api-handler.js";
-import {usersMockData} from "../storage/users.js";
+import {
+  getProfile,
+  updateProfile,
+  updateNotifications,
+} from '../storage/users.js';
 
-// ─── Global Setup ─────────────────────────────────────────────────────────────
+const delay = (ms = 250) => new Promise(resolve => setTimeout(resolve, ms));
 
-api.setBaseURL("http://localhost:3000");
-
-// ─── API Methods ─────────────────────────────────────────────────────────────
-function getAllUsersMockData() {
-    return [...usersMockData];
+/** @returns {Promise<{data: object, error: null}>} */
+export async function fetchProfile() {
+  await delay(250);
+  try {
+    return { data: getProfile(), error: null };
+  } catch (err) {
+    return { data: null, error: err.message };
+  }
 }
 
-function getUserByIdMockData(userId) {
-    return usersMockData.find((user) => user.id === userId) || null;
+export async function saveProfile(patch) {
+  await delay(400);
+  try {
+    return { data: updateProfile(patch), error: null };
+  } catch (err) {
+    return { data: null, error: err.message };
+  }
 }
 
-function getUsersByStatusMockData(status) {
-    return usersMockData.filter((user) => user.status === status);
+export async function saveNotifications(patch) {
+  await delay(300);
+  try {
+    return { data: updateNotifications(patch), error: null };
+  } catch (err) {
+    return { data: null, error: err.message };
+  }
 }
-
-const UsersStorage = {
-    getAllUsersMockData,
-    getUserByIdMockData,
-    getUsersByStatusMockData,
-};
-
-export { usersMockData };
-export default UsersStorage;

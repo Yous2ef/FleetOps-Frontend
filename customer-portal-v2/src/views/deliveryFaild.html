@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Attempt Unsuccessful - FleetOps</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        /* --- الأساسيات --- */
+        body {
+            background-color: #050505;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        /* --- الحاوية المتجاوبة (Responsive Container) --- */
+        /* هنا السر: العرض 100% مع بادينج، بيكبر ويصغر مع الشاشة */
+        .main-container {
+            width: 100%;
+            max-width: 1400px; /* بيسمح للشاشة تفتح للاخر بس بيحكمها في الشاشات العملاقة */
+            margin: 0 auto;
+            padding: 40px 5%;
+        }
+
+        /* --- نظام الـ Grid للـ Responsive --- */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* عمود واحد للموبايل */
+            gap: 24px;
+        }
+
+        /* أول ما الشاشة تكبر (تابلت أو ديسكتوب)، اقلبهم عمودين عشان ياخدوا العرض صح */
+        @media (min-width: 992px) {
+            .content-grid {
+                grid-template-columns: 1fr 1fr; 
+                align-items: start; /* عشان الكروت ماتتمطش بالطول لو عمود أطول من التاني */
+            }
+        }
+
+        /* --- Header (Error State) --- */
+        .header-error {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .error-icon-wrapper {
+            width: 70px;
+            height: 70px;
+            background-color: #3a1c1e;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px auto;
+        }
+
+        .error-icon-wrapper i { color: #d9534f; font-size: 1.8rem; }
+        .header-title { color: #4a6fa5; font-weight: 700; font-size: 1.3rem; margin-bottom: 5px; }
+        .header-subtitle { color: #6c757d; font-size: 1rem; font-weight: 600; }
+
+        /* --- Cards (الكروت) --- */
+        .custom-card {
+            background-color: #f4f7fb;
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            height: 100%; /* عشان لو حطيناهم جنب بعض يبقوا متناسقين */
+        }
+
+        .card-header-sm {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #5c7094;
+            margin-bottom: 15px;
+        }
+
+        /* --- Card 1: What Happened --- */
+        .van-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+
+        /* --- Card 2: What Happens Next --- */
+        .text-green { color: #056c45 !important; }
+        
+        .support-box {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            flex-wrap: wrap; /* عشان لو الشاشة ضاقت أوي، الزرار ينزل تحت */
+            gap: 10px;
+        }
+
+        .btn-call {
+            background-color: #056c45;
+            color: white;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: none;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .btn-call:hover { background-color: #045436; color: white; }
+
+        /* --- Card 3: Timeline --- */
+        .timeline {
+            position: relative;
+            padding-left: 35px;
+            margin-top: 25px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 5px;
+            bottom: 35px;
+            width: 2px;
+            background-color: #d1d8e6;
+        }
+
+        .timeline-item { position: relative; margin-bottom: 30px; }
+        .timeline-item:last-child { margin-bottom: 0; }
+
+        .timeline-dot {
+            position: absolute;
+            left: -35px;
+            top: -2px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            color: white;
+            z-index: 2;
+        }
+
+        .dot-success { background-color: #056c45; }
+        .dot-error { background-color: #b74b4b; }
+
+        .timeline-item.success::after {
+            content: '';
+            position: absolute;
+            left: -23px;
+            top: 24px;
+            width: 2px;
+            height: calc(100% + 6px);
+            background-color: #056c45;
+            z-index: 1;
+        }
+
+        .timeline-title { font-weight: 700; font-size: 1.05rem; color: #0b2240; margin-bottom: 4px; }
+        .timeline-title.error { color: #b74b4b; }
+        .timeline-time { font-size: 0.85rem; color: #7b8fae; }
+
+        /* --- Card 4: Map --- */
+        .map-card {
+            background-color: #8bbdc2;
+            background-image: url('https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80');
+            background-size: cover;
+            background-position: center;
+            border-radius: 20px;
+            height: 250px; /* كبرنا الخريطة شوية عشان تملى العين في الشاشات الكبيرة */
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 20px;
+            width: 100%;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(94, 169, 184, 0.4);
+            border-radius: 20px;
+        }
+
+        .map-chip {
+            background-color: white;
+            color: #0b2240;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            z-index: 2;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .map-chip i { color: #b74b4b; font-size: 1rem;}
+        /* --- Bottom Navigation --- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0 15px 0;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+            border-radius: 20px 20px 0 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            text-align: center;
+            color: #a0aab8;
+            font-size: 0.75rem;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 25%;
+            transition: 0.2s;
+        }
+
+        .nav-item i { font-size: 1.2rem; }
+        .nav-item.active { color: #056c45; font-weight: 600; }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        
+        <div class="header-error">
+            <div class="error-icon-wrapper">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </div>
+            <div class="header-title">Delivery Attempt Unsuccessful</div>
+            <div class="header-subtitle">Attempted today at 2:45 PM</div>
+        </div>
+
+        <div class="content-grid">
+            
+            <div class="d-flex flex-column gap-4">
+                <div class="custom-card">
+                    <div class="card-header-sm">
+                        <i class="bi bi-question-square"></i> What happened
+                    </div>
+                    <h4 class="fw-bold" style="color: #0b2240;">We couldn't reach you at the address</h4>
+                    <img src="https://images.unsplash.com/photo-1580674285054-bed31e145f59?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Delivery Van" class="van-image">
+                </div>
+
+                <div class="custom-card">
+                    <div class="card-header-sm text-green">
+                        <i class="bi bi-arrow-repeat fs-5"></i> What happens next
+                    </div>
+                    <p style="color: #5c7094; font-size: 1rem; margin-bottom: 0;">
+                        Returned to warehouse. Our team will contact you to reschedule.
+                    </p>
+                    
+                    <div class="support-box">
+                        <div>
+                            <div style="font-size: 0.7rem; font-weight: 800; color: #7b8fae; letter-spacing: 1px;">DIRECT SUPPORT</div>
+                            <div class="fw-bold" style="color: #0b2240; font-size: 1.2rem;">+20 123 456 789</div>
+                        </div>
+                        <button class="btn-call">Call Now</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex flex-column gap-4">
+                <div class="custom-card">
+                    <h5 class="fw-bold" style="color: #0b2240; margin-bottom: 20px;">Tracking History</h5>
+                    
+                    <div class="timeline">
+                        <div class="timeline-item success">
+                            <div class="timeline-dot dot-success"><i class="bi bi-check fs-5"></i></div>
+                            <div class="timeline-title">Order Confirmed</div>
+                            <div class="timeline-time">Oct 24, 09:00 AM</div>
+                        </div>
+                        
+                        <div class="timeline-item success">
+                            <div class="timeline-dot dot-success"><i class="bi bi-check fs-5"></i></div>
+                            <div class="timeline-title">Driver Dispatched</div>
+                            <div class="timeline-time">Oct 24, 11:30 AM</div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-dot dot-success"><i class="bi bi-check fs-5"></i></div>
+                            <div class="timeline-title">Out for Delivery</div>
+                            <div class="timeline-time">Oct 24, 01:15 PM</div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-dot dot-error"><i class="bi bi-x fs-5"></i></div>
+                            <div class="timeline-title error">Delivery Attempted</div>
+                            <div class="timeline-time">Oct 24, 02:45 PM &bull; Recipient not available</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="map-card">
+                    <div class="map-overlay"></div>
+                    <div class="map-chip">
+                        <i class="bi bi-geo-alt-fill"></i> ATTEMPTED AT: 124 BUSINESS DIST.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <nav class="bottom-nav">
+        <a href="./deliveryFaild.html" class="nav-item active">
+            <i class="bi bi-layout-text-window"></i>
+            <span>STATUS</span>
+        </a>
+        <a href="./arrivingAlerts.html" class="nav-item">
+            <i class="bi bi-map"></i>
+            <span>TRACKING</span>
+        </a>
+        <a href="./delivered.html" class="nav-item">
+            <i class="bi bi-receipt-cutoff"></i>
+            <span>DETAILS</span>
+        </a>
+        <a href="./linkExpired.html" class="nav-item ">
+            <i class="bi bi-question-circle-fill"></i>
+            <span>SUPPORT</span>
+        </a>
+    </nav>
+    </div>
+
+</body>
+</html>

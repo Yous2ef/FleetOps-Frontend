@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmed - FleetOps</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        /* --- الأساسيات --- */
+        body {
+            background-color: #ffffff;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        /* --- الحاوية المتجاوبة (Responsive Grid) --- */
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 5%;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* موبايل */
+            gap: 24px;
+        }
+
+        @media (min-width: 992px) {
+            .content-grid {
+                grid-template-columns: 1fr 1fr; /* ديسكتوب */
+                align-items: start;
+            }
+        }
+
+        /* --- الألوان والـ Badges --- */
+        .badge-prepaid {
+            background-color: #68f4aa;
+            color: #034d2f;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        /* --- Header Section --- */
+        h1.main-title {
+            color: #0b2240;
+            font-weight: 800;
+            font-size: 2.5rem;
+            line-height: 1.2;
+            margin: 20px 0 15px 0;
+        }
+
+        p.subtitle {
+            color: #4a5c7a;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            margin-bottom: 25px;
+            max-width: 90%;
+        }
+
+        .btn-primary-custom {
+            background-color: #056c45;
+            color: white;
+            border-radius: 12px;
+            padding: 14px 20px;
+            font-weight: 600;
+            font-size: 1rem;
+            border: none;
+            width: 100%;
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary-custom:hover { background-color: #045436; color: white; }
+
+        /* --- Warehouse Image Card --- */
+        .warehouse-card {
+            background-image: url('https://images.unsplash.com/photo-1586528116311-ad8ed7c663c0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80');
+            background-size: cover;
+            background-position: center;
+            border-radius: 20px;
+            height: 280px;
+            position: relative;
+            margin-top: 25px;
+        }
+
+        .warehouse-overlay-badge {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            border-radius: 16px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .icon-box-green {
+            background-color: #e2f5ec;
+            color: #056c45;
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        /* --- Common Cards --- */
+        .soft-card {
+            background-color: #f4f7fb;
+            border-radius: 24px;
+            padding: 30px;
+            margin-top: 24px;
+        }
+
+        .outline-card {
+            background-color: #ffffff;
+            border: 1px solid #eef2f9;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            margin-bottom: 20px;
+        }
+
+        .dark-promo-card {
+            background-color: #5d6771;
+            border-radius: 24px;
+            padding: 30px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            margin-top: 24px;
+        }
+
+        .promo-icon-bg {
+            position: absolute;
+            right: -20px;
+            bottom: -20px;
+            font-size: 8rem;
+            color: rgba(255,255,255,0.05);
+            transform: rotate(-15deg);
+        }
+
+        /* --- Timeline --- */
+        .timeline {
+            position: relative;
+            padding-left: 35px;
+            margin-top: 25px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 5px;
+            bottom: 30px;
+            width: 2px;
+            background-color: #d1d8e6;
+        }
+
+        .timeline-item { position: relative; margin-bottom: 30px; }
+        .timeline-item:last-child { margin-bottom: 0; }
+
+        .timeline-dot {
+            position: absolute;
+            left: -35px;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .dot-active { background-color: #056c45; color: white; font-size: 0.8rem; }
+        .dot-pending { background-color: #eef2f9; border: 4px solid #ffffff; box-shadow: 0 0 0 2px #d1d8e6; }
+        .dot-pending::after { content: ''; width: 8px; height: 8px; background-color: #a0aab8; border-radius: 50%; }
+
+        .tl-title { font-weight: 700; font-size: 1rem; color: #0b2240; }
+        .tl-title.pending { color: #7b8fae; }
+        .tl-time { font-size: 0.8rem; color: #7b8fae; }
+        .tl-time.pending { color: #a0aab8; }
+
+        /* --- Info Typography --- */
+        .info-label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #4a5c7a;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        .info-value { font-size: 1.1rem; font-weight: 700; color: #0b2240; line-height: 1.4; }
+
+        /* --- Accordion / Action Bar --- */
+        .action-bar {
+            background-color: #f4f7fb;
+            border-radius: 16px;
+            padding: 18px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            color: #0b2240;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .action-icon {
+            background-color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4a5c7a;
+        }
+
+        /* --- Order Items --- */
+        .item-card {
+            background-color: white;
+            border-radius: 16px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .item-card:last-child { margin-bottom: 0; }
+        
+        .item-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            object-fit: cover;
+            background-color: #f4f7fb;
+        }
+
+        /* --- Bottom Navigation --- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0 15px 0;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+            border-radius: 20px 20px 0 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            text-align: center;
+            color: #a0aab8;
+            font-size: 0.75rem;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 25%;
+            transition: 0.2s;
+        }
+
+        .nav-item i { font-size: 1.2rem; }
+        .nav-item.active { color: #056c45; font-weight: 600; }
+        
+        /* Media Query لتظبيط المسافات في الشاشات الكبيرة جداً */
+        @media (min-width: 992px) {
+            .expired-card { padding: 50px; }
+            .btn-row { display: flex; gap: 15px; }
+            .btn-row > * { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        
+        <div class="content-grid">
+            
+            <div class="d-flex flex-column" style="margin-bottom: 50px;">
+                
+                <div>
+                    <div class="badge-prepaid">
+                        <i class="bi bi-check-circle-fill"></i> PAYMENT: PREPAID
+                    </div>
+                    <h1 class="main-title">Order<br>Confirmed</h1>
+                    <p class="subtitle">Your order is being prepared with precision at our central hub.</p>
+                    <button class="btn-primary-custom">
+                        <i class="bi bi-bell"></i> Enable notifications
+                    </button>
+                </div>
+
+                <div class="warehouse-card">
+                    <div class="warehouse-overlay-badge">
+                        <div class="icon-box-green">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.7rem; font-weight: 800; color: #7b8fae; letter-spacing: 1px;">STATUS</div>
+                            <div style="font-weight: 800; color: #0b2240; font-size: 1.05rem;">Preparing Order</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="soft-card">
+                    <h5 class="fw-bold" style="color: #0b2240;">Track Progress</h5>
+                    
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-dot dot-active"><i class="bi bi-check"></i></div>
+                            <div class="tl-title">Order Confirmed</div>
+                            <div class="tl-time">Confirmed today at 08:45 AM</div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-dot dot-pending"></div>
+                            <div class="tl-title pending">Driver Dispatched</div>
+                            <div class="tl-time pending">Pending assignment</div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-dot dot-pending"></div>
+                            <div class="tl-title pending">Out for Delivery</div>
+                            <div class="tl-time pending">Est. 10:30 AM</div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-dot dot-pending"></div>
+                            <div class="tl-title pending">Delivered</div>
+                            <div class="tl-time pending">Est. 12:00 PM</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dark-promo-card">
+                    <i class="bi bi-bell-fill promo-icon-bg"></i>
+                    <h5 class="fw-bold mb-2">Want updates?</h5>
+                    <p style="font-size: 0.95rem; color: #d1d8e6; margin-bottom: 20px; position: relative; z-index: 2;">
+                        Get real-time SMS notifications for your delivery.
+                    </p>
+                    <button class="btn btn-light fw-bold" style="border-radius: 10px; padding: 10px 20px; position: relative; z-index: 2; color: #0b2240;">
+                        Notify Me
+                    </button>
+                </div>
+
+            </div>
+
+            <div class="d-flex flex-column">
+                
+                <div class="outline-card">
+                    <i class="bi bi-geo-alt fs-4" style="color: #4a5c7a;"></i>
+                    <div class="info-label">DELIVERY ADDRESS</div>
+                    <div class="info-value">742 Evergreen Terrace, Springfield, IL 62704</div>
+                </div>
+
+                <div class="outline-card">
+                    <i class="bi bi-clock fs-4" style="color: #056c45;"></i>
+                    <div class="info-label">EXPECTED ARRIVAL</div>
+                    <div class="info-value">10 AM - 12 PM Today</div>
+                </div>
+
+                <div class="action-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="action-icon"><i class="bi bi-pencil-square"></i></div>
+                        Add special instructions
+                    </div>
+                    <i class="bi bi-chevron-down text-muted"></i>
+                </div>
+
+                <div class="soft-card" style="margin-top: 0;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold m-0" style="color: #0b2240;">Order Contents</h5>
+                        <span style="color: #5c7094; font-size: 0.85rem; font-weight: 600;">3 Items Total</span>
+                    </div>
+
+                    <div class="item-card">
+                        <img src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" alt="Camera" class="item-img">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold" style="color: #0b2240;">FleetOps<br>Pro Sensor</div>
+                            <div style="font-size: 0.75rem; color: #5c7094; margin-top: 4px;">Qty: 1 &bull; SKU: PRO-990</div>
+                        </div>
+                        <div class="fw-bold fs-5" style="color: #0b2240;">$129.00</div>
+                    </div>
+
+                    <div class="item-card">
+                        <img src="https://images.unsplash.com/photo-1608231387042-66d1773070a5?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" alt="Sneakers" class="item-img">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold" style="color: #0b2240;">Velo-Stride<br>Sneakers</div>
+                            <div style="font-size: 0.75rem; color: #5c7094; margin-top: 4px;">Qty: 1 &bull; Size: 10.5</div>
+                        </div>
+                        <div class="fw-bold fs-5" style="color: #0b2240;">$85.00</div>
+                    </div>
+                </div>
+
+            </div>
+                <nav class="bottom-nav">
+        <a href="./deliveryFaild.html" class="nav-item active">
+            <i class="bi bi-layout-text-window"></i>
+            <span>STATUS</span>
+        </a>
+        <a href="./arrivingAlerts.html" class="nav-item">
+            <i class="bi bi-map"></i>
+            <span>TRACKING</span>
+        </a>
+        <a href="./delivered.html" class="nav-item">
+            <i class="bi bi-receipt-cutoff"></i>
+            <span>DETAILS</span>
+        </a>
+        <a href="./linkExpired.html" class="nav-item ">
+            <i class="bi bi-question-circle-fill"></i>
+            <span>SUPPORT</span>
+        </a>
+    </nav>
+        </div>
+    
+    </div>
+
+</body>
+</html>
