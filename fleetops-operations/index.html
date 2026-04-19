@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>FleetOps Operations</title>
+        <link rel="icon" href="data:," />
+        <link rel="stylesheet" href="./src/styles/main.css" />
+    </head>
+    <body>
+        <div class="dashboard-shell" data-shell>
+            <aside class="dashboard-sidebar" aria-label="Sidebar Navigation">
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand__identity">
+                        <div class="sidebar-brand__icon">
+                            <i data-lucide="truck"></i>
+                        </div>
+                        <div class="sidebar-brand__meta">
+                            <strong class="sidebar-brand__title"
+                                >FleetOps</strong
+                            >
+                            <span class="sidebar-brand__subtitle"
+                                >Operations</span
+                            >
+                        </div>
+                    </div>
+
+                    <button
+                        title="Collapse sidebar"
+                        id="sidebar-collapse-btn"
+                        class="sidebar-collapse-btn"
+                        type="button"
+                        aria-controls="app-content"
+                        aria-expanded="true">
+                        <span aria-hidden="true"
+                            ><i data-lucide="chevron-left"></i>
+                        </span>
+                    </button>
+                </div>
+
+                <nav class="sidebar-menu" aria-label="Main Menu">
+                    <a
+                        class="sidebar-link"
+                        href="/"
+                        data-link
+                        data-route="/"
+                        title="Dashboard">
+                        <span class="sidebar-link__icon">
+                            <i data-lucide="layout-dashboard"></i>
+                        </span>
+                        <span class="sidebar-link__label">Dashboard</span>
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/orders"
+                        data-link
+                        data-route="/orders"
+                        title="Orders">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="package"></i
+                        ></span>
+                        <span class="sidebar-link__label">Orders</span>
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/route-planning"
+                        data-link
+                        data-route="/route-planning"
+                        title="Route Planning">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="route"></i
+                        ></span>
+                        <span class="sidebar-link__label">Route Planning</span>
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/routes"
+                        data-link
+                        data-route="/routes"
+                        title="Routes">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="navigation"></i
+                        ></span>
+                        <span class="sidebar-link__label">Routes</span>
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/live-monitoring"
+                        data-link
+                        data-route="/live-monitoring"
+                        title="Live Monitoring">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="radio"></i
+                        ></span>
+                        <span class="sidebar-link__label">Live Monitoring</span>
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/fleet-management"
+                        data-link
+                        data-route="/fleet-management"
+                        title="Fleet Management">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="truck"></i
+                        ></span>
+                        <span class="sidebar-link__label"
+                            >Fleet Management</span
+                        >
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/drivers"
+                        data-link
+                        data-route="/drivers"
+                        title="Drivers">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="user"></i
+                        ></span>
+                        <span class="sidebar-link__label">Drivers</span>
+                    </a>
+
+                    <a
+                        class="sidebar-link"
+                        href="/cod-management"
+                        data-link
+                        data-route="/cod-management"
+                        title="COD Management">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="dollar-sign"></i
+                        ></span>
+                        <span class="sidebar-link__label">COD Management</span>
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/inventory"
+                        data-link
+                        data-route="/inventory"
+                        title="Inventory">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="boxes"></i
+                        ></span>
+                        <span class="sidebar-link__label">Inventory</span>
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/user-management"
+                        data-link
+                        data-route="/user-management"
+                        title="User Management">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="users"></i
+                        ></span>
+                        <span class="sidebar-link__label">User Management</span>
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/analytics"
+                        data-link
+                        data-route="/analytics"
+                        title="Analytics">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="chart-column"></i
+                        ></span>
+                        <span class="sidebar-link__label">Analytics</span>
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/maintenance"
+                        data-link
+                        data-route="/maintenance"
+                        title="Maintenance">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="wrench"></i
+                        ></span>
+                        <span class="sidebar-link__label">Maintenance</span>
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/audit-trail"
+                        data-link
+                        data-route="/audit-trail"
+                        title="Audit Trail">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="clipboard-list"></i
+                        ></span>
+                        <span class="sidebar-link__label">Audit Trail</span>
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/settings"
+                        data-link
+                        data-route="/settings"
+                        title="Settings">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="settings"></i
+                        ></span>
+                        <span class="sidebar-link__label">Settings</span>
+                    </a>
+                    <a
+                        class="sidebar-link"
+                        href="/preview-page"
+                        data-link
+                        data-route="/preview-page"
+                        title="Preview Page">
+                        <span class="sidebar-link__icon"
+                            ><i data-lucide="eye"></i
+                        ></span>
+                        <span class="sidebar-link__label">Preview Page</span>
+                    </a>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <button class="sidebar-signout" type="button">
+                        <i data-lucide="log-out"></i>
+                        <span class="sidebar-link__label">Sign Out</span>
+                    </button>
+                </div>
+            </aside>
+
+            <div class="dashboard-main">
+                <header class="dashboard-topbar">
+                    <div class="dashboard-topbar__left">
+                        <button
+                            id="sidebar-mobile-btn"
+                            class="mobile-menu-btn"
+                            type="button"
+                            aria-label="Open sidebar">
+                            <i data-lucide="menu"></i>
+                        </button>
+                        <div class="topbar-title">
+                            <h1 id="nav-title">Dashboard</h1>
+                            <span
+                                class="topbar-live-pill"
+                                aria-label="Live connection status">
+                                <i data-lucide="wifi"></i>
+                                <span
+                                    class="live-dot"
+                                    aria-hidden="true"></span>
+                                <span>Live</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-topbar__right">
+                        <div class="search-field topbar-search">
+                            <i data-lucide="search" class="search-icon"></i>
+
+                            <input type="text" placeholder="Search..." />
+                        </div>
+                        <button
+                            class="topbar-icon-btn"
+                            type="button"
+                            aria-label="Notifications">
+                            <i data-lucide="bell"></i>
+                        </button>
+                        <div class="topbar-user">
+                            <div class="topbar-user__avatar">
+                                <i data-lucide="user"></i>
+                            </div>
+                            <div class="topbar-user__meta">
+                                <strong>Ahmed K.</strong>
+                                <span>Fleet Manager</span>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <main
+                    id="app-content"
+                    class="app-content"
+                    aria-live="polite"></main>
+            </div>
+        </div>
+
+        <script type="module" src="./src/main.js"></script>
+    </body>
+</html>
