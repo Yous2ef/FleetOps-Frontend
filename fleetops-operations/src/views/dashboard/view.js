@@ -56,7 +56,7 @@ function renderFleetTable(root, page){
     const pageRows     = fleetData.slice(start, start + PAGE_SIZE);
 
     tbody.innerHTML = pageRows.map(row =>`
-    <>tr
+    <tr>
         <td><strong style="color:var(--color-primary);">${row.routeId}</strong></td>
 
         <td>${row.location}</td>
