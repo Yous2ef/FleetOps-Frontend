@@ -1,7 +1,7 @@
 export const routes = [
     {
         path: "/",
-        title: "FleetOps Hub | Home",
+        title: "FleetOps Hub | Dashboard",
         view: {
             html: "/src/views/home/view.html",
             css: "/src/views/home/view.css",
