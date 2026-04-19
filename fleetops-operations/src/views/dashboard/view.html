@@ -1,8 +1,103 @@
 <section class="view-page app-section dashboard-page stack">
-    <section class="card stack">
-        <h1 class="heading-lg">Dashboard</h1>
-        <p>This module is ready for implementation.</p>
-        <p class="helper-text">Use this section to build the dashboard workflow.</p>
-    </section>
+  <main class="dashboard-main">
+    <div class="fleet-row summary-reports">
+      <div class="report-card active-routes">
+        <span class="report-label">ACTIVE ROUTES</span>
+        <i data-lucide="route" class="icons report-icon"></i>
+        <span class="report-count">24</span>
+        <span class="report-change">+2.1%</span>
+      </div>
+      <div class="report-card orders-today">
+        <span class="report-label">ORDERS TODAY</span>
+        <i data-lucide="package" class="icons report-icon"></i>
+        <span class="report-count">140</span>
+        <span class="report-change">+14%</span>
+      </div>
+      <div class="report-card open-alerts">
+        <span class="report-label">OPEN ALERTS</span>
+        <i data-lucide="alert-triangle" class="icons report-icon"></i>
+        <span class="report-count">4</span>
+        <span class="report-change">N/A</span>
+      </div>
+      <div class="report-card fuel-efficency">
+        <span class="report-label">FUEL EFFICIENCY</span>
+        <i data-lucide="fuel" class="icons report-icon"></i>
+        <span class="report-count">8.2 km/L</span>
+        <span class="report-change">-4%</span>
+      </div>
+      <div class="report-card delivery-rate">
+        <span class="report-label">DELIVERY RATE</span>
+        <i data-lucide="truck" class="icons report-icon"></i>
+        <span class="report-count">98%</span>
+        <span class="report-change">+2%</span>
+      </div>
+    </div>
+    <!-- ====================Fleet Active ==================== -->
+    <div class="fleet-row reports">
+      <div class="fleet-operations">
+        <div class="fleet-operations-header">
+          <i data-lucide="truck" class="icons"></i>
+          <span class="active-fleet-title">Active Fleet Operations</span>
+          <button class="btn-view-all">View All <i data-lucide="arrow-right"></i></button>
+        </div>
+        <table class="fleet-operations-table">
+              <thead>
+                <tr>
+                  <th>Route ID</th>
+                  <th>Location</th>
+                  <th>Driver</th>
+                  <th>Progress</th>
+                  <th>ETA</th>
+                </tr>
+              </thead>
+              <tbody id="fleet-operations-tbody"></tbody>
+            </table>
+
+            <div class="fleet-operations-footer">
+              <span class="fleet-operations-results">Showing 1 - 10 of 100 results</span>
+              <div class="fleet-operations-pagination">
+                <button class="fleet-operations-button" id="fleet-operations-prev" type="button">Previous</button>
+                <button class="fleet-operations-button" id="fleet-operations-next" type="button">Next</button>
+              </div>
+            </div>
+          </div>
+      <!-- ========== Alerts Panel ========== -->
+      <div class="alerts-panel">
+        <div class="recent-alerts">
+          <div class="alerts-header">
+            <i data-lucide="alert-triangle" class="icons"></i>
+            <span>Recent Alerts</span>
+          </div>
+          <div class="recent-alerts-content" id="recent-alerts-container">
+            <div class="alert-item alert-critical">
+              <div class="alert-meta">
+                <span class="alert-type">SUDDEN DECELERATION</span>
+                <span class="alert-time">14:22</span>
+              </div>
+              <div class="alert-message">
+                <strong>V-788293</strong> detected sudden G-force spike on Route A4.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="window-violation">
+          <div class="window-violation-header">
+            <i data-lucide="clock" class="icons delay-icon"></i>
+            <span>Window Violations</span>
+          </div>
+          <div class="window-violation-content" id="window-violations-container">
+            <div class="alert-item alert-warning">
+              <div class="alert-meta">
+                <span class="alert-type">ETA MISSED</span>
+                <span class="alert-time">12:30</span>
+              </div>
+              <div class="alert-message">
+                <strong>ORD-88219</strong> +45M Northside Distribution Center.
+              </div>
+            </div>
+          </div>
+      </div>
+    </div>
+  </main>
 </section>
 
