@@ -1,4 +1,5 @@
-import UsersStorage from "/src/services/api/users.js";
+import { getUsers, updateUsers } from "/src/services/storage/users.js";
+import { logAuditAction } from "/src/services/storage/auditLogger.js";
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -7,18 +8,25 @@ let _filter = "all";
 let _editingId = null;
 let _handlers = {};
 
-// ─── Data Methods (storage layer — swap for real API calls later) ─────────────
+// ─── Data Methods (storage layer) ─────────────
 
-function loadUsers() {
-    _users = UsersStorage.getAllUsersMockData();
+async function loadUsers() {
+    _users = await getUsers();
+    updateCountLabel();
+    applyFilter();
 }
 
-function persistUpdate(id, changes) {
+async function persistUpdate(id, changes) {
     const idx = _users.findIndex((u) => u.id === id);
-    if (idx !== -1) _users[idx] = { ..._users[idx], ...changes };
+    if (idx !== -1) {
+        const oldVal = { ..._users[idx] };
+        _users[idx] = { ..._users[idx], ...changes };
+        await updateUsers([..._users]);
+        await logAuditAction("ADM-001", "Admin", "Updated", "User", id, oldVal, _users[idx]);
+    }
 }
 
-function persistCreate(payload) {
+async function persistCreate(payload) {
     const newUser = {
         ...payload,
         id: "USR-" + Date.now(),
@@ -26,6 +34,8 @@ function persistCreate(payload) {
         lastLoginAt: null,
     };
     _users.push(newUser);
+    await updateUsers([..._users]);
+    await logAuditAction("ADM-001", "Admin", "Created", "User", newUser.id, null, newUser);
 }
 
 // ─── Render Helpers ───────────────────────────────────────────────────────────
@@ -133,7 +143,7 @@ function closeModal() {
     _editingId = null;
 }
 
-function saveModal() {
+async function saveModal() {
     const payload = {
         fullName: document.getElementById("modal-name")?.value.trim(),
         email: document.getElementById("modal-email")?.value.trim(),
@@ -145,10 +155,21 @@ function saveModal() {
 
     if (!payload.fullName || !payload.email || !payload.role) return;
 
+    const submitBtn = document.getElementById("modal-save-btn");
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    }
+
     if (_editingId) {
-        persistUpdate(_editingId, payload);
+        await persistUpdate(_editingId, payload);
     } else {
-        persistCreate(payload);
+        await persistCreate(payload);
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Save User';
     }
 
     updateCountLabel();
@@ -156,19 +177,17 @@ function saveModal() {
     closeModal();
 }
 
-function toggleUserStatus(id) {
+async function toggleUserStatus(id) {
     const user = _users.find((u) => u.id === id);
     if (!user) return;
-    persistUpdate(id, { status: user.status === "active" ? "inactive" : "active" });
+    await persistUpdate(id, { status: user.status === "active" ? "inactive" : "active" });
     applyFilter();
 }
 
 // ─── Mount / Unmount ──────────────────────────────────────────────────────────
 
 export function mount(rootElement) {
-    loadUsers();
-    updateCountLabel();
-    applyFilter();
+    loadUsers(); // This is async but we don't need to await it for the basic UI to mount
 
     const filterTabs = rootElement.querySelector("#users-filter-tabs");
     _handlers.filterClick = (e) => {

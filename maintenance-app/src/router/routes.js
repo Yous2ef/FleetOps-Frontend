@@ -9,12 +9,12 @@ export const routes = [
         },
     },
     {
-        path: "/page-one",
-        title: "Maintenance App | Page One",
+        path: "/inventory",
+        title: "Maintenance App | Spare Parts",
         view: {
-            html: "/src/views/page-one/view.html",
-            css: "/src/views/page-one/view.css",
-            js: "/src/views/page-one/view.js",
+            html: "/src/views/inventory/view.html",
+            css: "/src/views/inventory/view.css",
+            js: "/src/views/inventory/view.js",
         },
     },
     {

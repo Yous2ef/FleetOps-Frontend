@@ -1,0 +1,410 @@
+<div class="settings-container">
+    <div class="settings-header">
+        <div>
+            <h2 class="heading-lg">Settings & Configuration</h2>
+            <p class="helper-text">System parameters and preferences</p>
+        </div>
+        <button class="button primary" id="btn-save-settings">
+            <i class="fa-solid fa-save"></i> Save Changes
+        </button>
+    </div>
+
+    <div class="settings-tabs" id="settings-tab-list">
+        <button class="tab-pill active" data-tab="general">General</button>
+        <button class="tab-pill" data-tab="kpi-weights">KPI Weights</button>
+        <button class="tab-pill" data-tab="fleet-policies">Alert Thresholds</button>
+        <button class="tab-pill" data-tab="maintenance-schedules">Maintenance Schedules</button>
+        <button class="tab-pill" data-tab="notifications">Notifications</button>
+        <button class="tab-pill" data-tab="security">Roles & Permissions</button>
+        <button class="tab-pill" data-tab="maintenance">Database</button>
+    </div>
+
+    <div class="settings-content">
+        <!-- GENERAL TAB -->
+        <div class="tab-panel active" id="tab-general">
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="fa-solid fa-globe text-primary"></i>
+                    <h3>Localization & Profile</h3>
+                </div>
+                <div class="settings-form-group">
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>Currency</strong>
+                            <span>System-wide display currency</span>
+                        </div>
+                        <div class="form-control">
+                            <select id="setting-currency" class="input-field" data-group="general" data-key="currency">
+                                <option value="EGP">EGP - Egyptian Pound</option>
+                                <option value="USD">USD - US Dollar</option>
+                                <option value="SAR">SAR - Saudi Riyal</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>Timezone</strong>
+                            <span>System timezone for logs and schedules</span>
+                        </div>
+                        <div class="form-control">
+                            <select id="setting-timezone" class="input-field" data-group="general" data-key="timezone">
+                                <option value="Africa/Cairo">Africa/Cairo</option>
+                                <option value="UTC">UTC</option>
+                                <option value="Asia/Riyadh">Asia/Riyadh</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI WEIGHTS TAB -->
+        <div class="tab-panel" id="tab-kpi-weights">
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="fa-solid fa-gauge-high text-primary"></i>
+                    <div>
+                        <h3>Driver Performance Score Weights</h3>
+                        <span class="sub-header-text">Weights must total 100%. Current total: <strong id="kpi-total"
+                                style="color: var(--color-chip-success-text)">100%</strong></span>
+                    </div>
+                </div>
+
+                <div class="settings-form-group kpi-compact-container">
+                    <div class="slider-item">
+                        <label class="slider-label">Delivery Speed</label>
+                        <div class="slider-control">
+                            <input type="range" id="setting-kpi-delivery" class="range-slider" data-group="kpiWeights"
+                                data-key="deliverySpeed" min="0" max="100" />
+                            <span class="slider-value-badge" id="val-deliverySpeed">40%</span>
+                        </div>
+                    </div>
+
+                    <div class="slider-item">
+                        <label class="slider-label">Fuel Efficiency</label>
+                        <div class="slider-control">
+                            <input type="range" id="setting-kpi-fuel" class="range-slider" data-group="kpiWeights"
+                                data-key="fuelEfficiency" min="0" max="100" />
+                            <span class="slider-value-badge" id="val-fuelEfficiency">30%</span>
+                        </div>
+                    </div>
+
+                    <div class="slider-item">
+                        <label class="slider-label">Customer Rating</label>
+                        <div class="slider-control">
+                            <input type="range" id="setting-kpi-customer" class="range-slider" data-group="kpiWeights"
+                                data-key="customerRating" min="0" max="100" />
+                            <span class="slider-value-badge" id="val-customerRating">30%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ALERT THRESHOLDS TAB -->
+        <div class="tab-panel" id="tab-fleet-policies">
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="fa-solid fa-shield-halved text-primary"></i>
+                    <h3>Alert Thresholds & Policies</h3>
+                </div>
+                <div class="settings-form-group">
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>Low Stock Alert Threshold</strong>
+                            <span>Default minimum quantity before alerting</span>
+                        </div>
+                        <div class="form-control inline">
+                            <input type="number" id="setting-low-stock" class="input-field w-100"
+                                data-group="fleetPolicies" data-key="lowStockThreshold" min="0" />
+                            <span class="unit">units</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>Spare Part Lifespan</strong>
+                            <span>Default months before recommending replacement</span>
+                        </div>
+                        <div class="form-control inline">
+                            <input type="number" id="setting-lifespan" class="input-field w-100"
+                                data-group="fleetPolicies" data-key="sparePartLifespanMonths" min="1" />
+                            <span class="unit">months</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>Delivery window violation trigger</strong>
+                            <span>Alert when delivery ETA is within this many minutes of window end</span>
+                        </div>
+                        <div class="form-control inline">
+                            <input type="number" id="setting-delivery-trigger" class="input-field w-100"
+                                data-group="fleetPolicies" data-key="deliveryWindowTriggerMins" min="0" />
+                            <span class="unit">minutes</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>Fuel discrepancy threshold</strong>
+                            <span>Flag fuel invoices with discrepancy above this percentage</span>
+                        </div>
+                        <div class="form-control inline">
+                            <input type="number" id="setting-fuel-disc" class="input-field w-100"
+                                data-group="fleetPolicies" data-key="fuelDiscrepancyPct" min="0" max="100" />
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAINTENANCE SCHEDULES TAB -->
+        <div class="tab-panel" id="tab-maintenance-schedules">
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="fa-solid fa-wrench text-primary"></i>
+                    <h3>Default Maintenance Intervals</h3>
+                </div>
+                <div class="table-container">
+                    <table class="settings-table">
+                        <thead>
+                            <tr>
+                                <th>Maintenance Type</th>
+                                <th>Light (km)</th>
+                                <th>Heavy (km)</th>
+                                <th>Refrigerated (km)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Oil Change</td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.oilChange" data-key="light" /></td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.oilChange" data-key="heavy" /></td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.oilChange" data-key="refrigerated" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Tire Rotation</td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.tireRotation" data-key="light" /></td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.tireRotation" data-key="heavy" /></td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.tireRotation" data-key="refrigerated" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Brake Inspection</td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.brakeInspection" data-key="light" />
+                                </td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.brakeInspection" data-key="heavy" />
+                                </td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.brakeInspection"
+                                        data-key="refrigerated" /></td>
+                            </tr>
+                            <tr>
+                                <td>Transmission Service</td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.transmissionService" data-key="light" />
+                                </td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.transmissionService" data-key="heavy" />
+                                </td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.transmissionService"
+                                        data-key="refrigerated" /></td>
+                            </tr>
+                            <tr>
+                                <td>Full Inspection</td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.fullInspection" data-key="light" /></td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.fullInspection" data-key="heavy" /></td>
+                                <td><input type="number" class="input-field w-100"
+                                        data-group="systemMaintenance.intervals.fullInspection"
+                                        data-key="refrigerated" /></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOTIFICATIONS TAB -->
+        <div class="tab-panel" id="tab-notifications">
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="fa-regular fa-bell text-primary"></i>
+                    <h3>Notification Preferences</h3>
+                </div>
+                <div class="table-container">
+                    <table class="settings-table text-center">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Event Type</th>
+                                <th>Push</th>
+                                <th>SMS</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="text-align: left;">Delivery Window Violation</td>
+                                <td><input type="checkbox" data-group="notifications.deliveryWindowViolation"
+                                        data-key="push" class="check-box" /></td>
+                                <td><input type="checkbox" data-group="notifications.deliveryWindowViolation"
+                                        data-key="sms" class="check-box" /></td>
+                                <td><input type="checkbox" data-group="notifications.deliveryWindowViolation"
+                                        data-key="email" class="check-box" /></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left;">Vehicle Breakdown</td>
+                                <td><input type="checkbox" data-group="notifications.vehicleBreakdown" data-key="push"
+                                        class="check-box" /></td>
+                                <td><input type="checkbox" data-group="notifications.vehicleBreakdown" data-key="sms"
+                                        class="check-box" /></td>
+                                <td><input type="checkbox" data-group="notifications.vehicleBreakdown" data-key="email"
+                                        class="check-box" /></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left;">Route Completed</td>
+                                <td><input type="checkbox" data-group="notifications.routeCompleted" data-key="push"
+                                        class="check-box" /></td>
+                                <td><input type="checkbox" data-group="notifications.routeCompleted" data-key="sms"
+                                        class="check-box" /></td>
+                                <td><input type="checkbox" data-group="notifications.routeCompleted" data-key="email"
+                                        class="check-box" /></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left;">Speed Anomaly</td>
+                                <td><input type="checkbox" data-group="notifications.speedAnomaly" data-key="push"
+                                        class="check-box" /></td>
+                                <td><input type="checkbox" data-group="notifications.speedAnomaly" data-key="sms"
+                                        class="check-box" /></td>
+                                <td><input type="checkbox" data-group="notifications.speedAnomaly" data-key="email"
+                                        class="check-box" /></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left;">Fuel Discrepancy</td>
+                                <td><input type="checkbox" data-group="notifications.fuelDiscrepancy" data-key="push"
+                                        class="check-box" /></td>
+                                <td><input type="checkbox" data-group="notifications.fuelDiscrepancy" data-key="sms"
+                                        class="check-box" /></td>
+                                <td><input type="checkbox" data-group="notifications.fuelDiscrepancy" data-key="email"
+                                        class="check-box" /></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left;">Maintenance Due</td>
+                                <td><input type="checkbox" data-group="notifications.maintenanceDue" data-key="push"
+                                        class="check-box" /></td>
+                                <td><input type="checkbox" data-group="notifications.maintenanceDue" data-key="sms"
+                                        class="check-box" /></td>
+                                <td><input type="checkbox" data-group="notifications.maintenanceDue" data-key="email"
+                                        class="check-box" /></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECURITY & ROLES TAB -->
+        <div class="tab-panel" id="tab-security">
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="fa-solid fa-user-lock text-primary"></i>
+                    <div>
+                        <h3>Roles & Permissions Matrix</h3>
+                        <span class="sub-header-text">Read-only overview of role access levels</span>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="settings-table">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Fleet Manager</th>
+                                <th>Dispatcher</th>
+                                <th>Driver</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roles-tbody">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SYSTEM MAINTENANCE TAB -->
+        <div class="tab-panel" id="tab-maintenance">
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="fa-solid fa-database text-primary"></i>
+                    <h3>Database Integrity Manager</h3>
+                </div>
+
+                <div class="db-stats-row">
+                    <div class="db-stat-box">
+                        <span class="db-stat-label">Last Archive Run</span>
+                        <strong class="db-stat-val" id="db-last-run">...</strong>
+                        <span class="db-stat-sub" id="db-records-archived">...</span>
+                    </div>
+                    <div class="db-stat-box">
+                        <span class="db-stat-label">Next Scheduled Run</span>
+                        <strong class="db-stat-val" id="db-next-run">...</strong>
+                    </div>
+                    <div class="db-stat-box action-box">
+                        <button class="button secondary" id="btn-archive-now">
+                            <i class="fa-solid fa-rotate"></i> Archive Now
+                        </button>
+                    </div>
+                </div>
+
+                <div class="progress-bar-container" id="archive-progress-container" style="display: none;">
+                    <div class="progress-info">
+                        <span>Running integrity check and archiving...</span>
+                        <span id="archive-progress-text">0%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="archive-progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="settings-form-group mt-4">
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>Archive Period</strong>
+                            <span>Keep active records for this duration</span>
+                        </div>
+                        <div class="form-control inline">
+                            <input type="number" id="setting-archive-period" class="input-field w-100"
+                                data-group="systemMaintenance" data-key="archivePeriodMonths" min="1" />
+                            <span class="unit">months</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>Backup Schedule</strong>
+                            <span>Frequency of automated database snapshots</span>
+                        </div>
+                        <div class="form-control">
+                            <select id="setting-backup-schedule" class="input-field" data-group="systemMaintenance"
+                                data-key="backupSchedule">
+                                <option value="Daily">Daily</option>
+                                <option value="Weekly">Weekly</option>
+                                <option value="Monthly">Monthly</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

@@ -1,6 +1,7 @@
-import { auditMockData } from '../../services/storage/audit.js';
+import { getAuditLogs } from '../../services/storage/audit.js';
 
 let root = null;
+let currentLogs = [];
 
 /**
  * Format ISO date string into readable format
@@ -95,7 +96,7 @@ function applyFilters() {
     const entity = root.querySelector('#filter-entity').value;
     const action = root.querySelector('#filter-action').value;
     
-    const filteredData = auditMockData.filter(log => {
+    const filteredData = currentLogs.filter(log => {
         // Text Match (Search in ID or Details)
         if (searchText && !log.details.toLowerCase().includes(searchText) && !log.id.toLowerCase().includes(searchText)) {
             return false;
@@ -138,7 +139,7 @@ function exportToCSV() {
     const entity = root.querySelector('#filter-entity').value;
     const action = root.querySelector('#filter-action').value;
     
-    const dataToExport = auditMockData.filter(log => {
+    const dataToExport = currentLogs.filter(log => {
         if (searchText && !log.details.toLowerCase().includes(searchText) && !log.id.toLowerCase().includes(searchText)) return false;
         const logDate = new Date(log.timestamp);
         if (dateFrom && logDate < new Date(dateFrom)) return false;
@@ -215,8 +216,16 @@ function handleClick(e) {
 export async function mount(rootElement) {
     root = rootElement;
     
-    // Initial Render
-    renderTable(auditMockData);
+    const tbody = root.querySelector('#audit-table-body');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Loading Logs...</td></tr>';
+    
+    try {
+        currentLogs = await getAuditLogs();
+        renderTable(currentLogs);
+    } catch (e) {
+        console.error("Failed to load audit logs", e);
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: red;">Failed to load logs.</td></tr>';
+    }
     
     // Attach event listeners via event delegation to the root element
     root.addEventListener('input', handleInput);

@@ -1,4 +1,6 @@
-const usersMockData = [
+const USERS_STORAGE_KEY = 'fleetops_users';
+
+const initialMockData = [
     {
         id: "USR-1001",
         fullName: "Ahmed Hassan",
@@ -56,5 +58,25 @@ const usersMockData = [
     },
 ];
 
+export let usersMockData = [...initialMockData];
 
-export { usersMockData };
+const delay = (ms = 100) => new Promise(resolve => setTimeout(resolve, ms));
+
+export async function getUsers() {
+    await delay();
+    const stored = localStorage.getItem(USERS_STORAGE_KEY);
+    if (!stored) {
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialMockData));
+        usersMockData = JSON.parse(JSON.stringify(initialMockData));
+        return usersMockData;
+    }
+    usersMockData = JSON.parse(stored);
+    return usersMockData;
+}
+
+export async function updateUsers(newUsers) {
+    await delay(100);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(newUsers));
+    usersMockData = newUsers;
+    return { success: true };
+}

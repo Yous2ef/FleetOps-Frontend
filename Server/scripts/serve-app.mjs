@@ -72,6 +72,65 @@ export async function startStaticServer({
             normalizedPath === "/" ? "/index.html" : normalizedPath;
 
         try {
+            if (normalizedPath === "/api/db") {
+                const dbPath = path.resolve(projectRoot, "Server", ".runtime", "db.json");
+                
+                response.setHeader("Content-Type", "application/json; charset=utf-8");
+                response.setHeader("Cache-Control", "no-store");
+                response.setHeader("Access-Control-Allow-Origin", "*");
+                response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
+                response.setHeader("Access-Control-Allow-Headers", "Content-Type");
+                
+                if (request.method === "OPTIONS") {
+                    response.writeHead(204);
+                    response.end();
+                    return;
+                }
+                
+                if (request.method === "GET") {
+                    try {
+                        const content = await fs.readFile(dbPath, "utf-8");
+                        response.writeHead(200);
+                        response.end(content);
+                    } catch (e) {
+                        response.writeHead(200);
+                        response.end("{}");
+                    }
+                    return;
+                }
+                
+                if (request.method === "POST" || request.method === "PUT") {
+                    let bodyStr = "";
+                    request.on("data", chunk => bodyStr += chunk.toString());
+                    request.on("end", async () => {
+                        try {
+                            const payload = JSON.parse(bodyStr);
+                            let db = {};
+                            try {
+                                const existing = await fs.readFile(dbPath, "utf-8");
+                                db = JSON.parse(existing);
+                            } catch (e) {}
+                            
+                            if (payload.key && payload.data !== undefined) {
+                                db[payload.key] = payload.data;
+                            } else {
+                                Object.assign(db, payload);
+                            }
+                            
+                            await fs.mkdir(path.dirname(dbPath), { recursive: true });
+                            await fs.writeFile(dbPath, JSON.stringify(db, null, 2), "utf-8");
+                            
+                            response.writeHead(200);
+                            response.end(JSON.stringify({ success: true }));
+                        } catch (e) {
+                            response.writeHead(500);
+                            response.end(JSON.stringify({ error: e.message }));
+                        }
+                    });
+                    return;
+                }
+            }
+
             if (normalizedPath === "/shared/api-handler.js") {
                 const content = await fs.readFile(sharedApiHandlerPath);
                 response.writeHead(200, {
