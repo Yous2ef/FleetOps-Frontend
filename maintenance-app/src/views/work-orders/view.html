@@ -1,15 +1,71 @@
-﻿<section class="view-page work-orders-page stack">
-    <section class="card stack">
-        <span class="chip neutral">Maintenance Module</span>
-        <h1 class="heading-lg">Work Orders</h1>
-        <p>Review open tasks, assign priorities, and keep repair flow moving smoothly.</p>
-    </section>
+<section class="view-page wo-page">
 
-    <section class="card stack">
-        <h2 class="heading-md">Quick Notes</h2>
-        <p>
-            This page is ready as an independent route and can now be connected
-            to live API data and business actions.
-        </p>
-    </section>
+    <!-- Page Header -->
+    <div class="wo-page__header">
+        <div class="wo-page__header-meta">
+            <h1 class="wo-page__title">Work Orders</h1>
+            <p class="wo-page__subtitle" id="wo-total-label">12 total work orders</p>
+        </div>
+        <a class="wo-btn wo-btn--primary" href="/work-orders/create" data-link>
+            + Create Work Order
+        </a>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="wo-filters">
+        <div class="wo-search">
+            <svg class="wo-search__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="wo-search-input" class="wo-search__input" type="text" placeholder="Search by WO ID, plate, mechanic..." />
+        </div>
+        <div class="wo-filter-selects">
+            <select id="wo-status-filter" class="wo-select">
+                <option value="">All Statuses</option>
+                <option value="Open">Open</option>
+                <option value="Closed">Closed</option>
+                <option value="Assigned">Assigned</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Resolved">Resolved</option>
+            </select>
+            <select id="wo-type-filter" class="wo-select">
+                <option value="">All Types</option>
+                <option value="Routine">Routine</option>
+                <option value="Breakdown">Breakdown</option>
+                <option value="Emergency">Emergency</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="wo-table-wrap">
+        <table class="wo-table">
+            <thead>
+                <tr>
+                    <th class="wo-th wo-th--check"><input type="checkbox" id="wo-select-all" aria-label="Select all" /></th>
+                    <th class="wo-th">WO ID</th>
+                    <th class="wo-th">Vehicle</th>
+                    <th class="wo-th">Type</th>
+                    <th class="wo-th">Mechanic</th>
+                    <th class="wo-th">Status</th>
+                    <th class="wo-th">Priority</th>
+                    <th class="wo-th">Description</th>
+                    <th class="wo-th">Cost</th>
+                    <th class="wo-th">Opened</th>
+                    <th class="wo-th">Updated</th>
+                    <th class="wo-th">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="wo-tbody">
+                <!-- Populated by JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer / Pagination -->
+    <div class="wo-footer">
+        <span class="wo-footer__count" id="wo-showing-label">Showing 1–8 of 12</span>
+        <div class="wo-pagination" id="wo-pagination">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
 </section>

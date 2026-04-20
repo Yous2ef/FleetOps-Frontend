@@ -1,0 +1,124 @@
+<section class="view-page cwo-page">
+
+    <!-- Page Header -->
+    <div class="cwo-header">
+        <div>
+            <h1 class="cwo-header__title">Create Work Order</h1>
+            <p class="cwo-header__subtitle">Fill in the details below to open a new maintenance work order.</p>
+        </div>
+    </div>
+
+    <form id="cwo-form" class="cwo-form" novalidate>
+
+        <!-- ── Section 1: Vehicle ─────────────────────── -->
+        <div class="cwo-card">
+            <h2 class="cwo-card__title">Vehicle</h2>
+            <div class="cwo-field">
+                <label class="cwo-label" for="cwo-vehicle">Select Vehicle <span class="cwo-required">*</span></label>
+                <select id="cwo-vehicle" name="vehicle" class="cwo-select cwo-select--full" required>
+                    <option value="">— Select a vehicle —</option>
+                </select>
+                <span class="cwo-error-msg" id="cwo-vehicle-error"></span>
+            </div>
+        </div>
+
+        <!-- ── Section 2: Maintenance Type ───────────── -->
+        <div class="cwo-card">
+            <h2 class="cwo-card__title">Maintenance Type</h2>
+            <div class="cwo-type-group" id="cwo-type-group">
+
+                <label class="cwo-type-card cwo-type-card--active" for="type-routine">
+                    <input type="radio" id="type-routine" name="maintenance_type" value="Routine" checked hidden />
+                    <span class="cwo-type-card__icon">🔧</span>
+                    <span class="cwo-type-card__label">Routine</span>
+                </label>
+
+                <label class="cwo-type-card" for="type-emergency">
+                    <input type="radio" id="type-emergency" name="maintenance_type" value="Emergency" hidden />
+                    <span class="cwo-type-card__icon">🚨</span>
+                    <span class="cwo-type-card__label">Emergency</span>
+                </label>
+
+                <label class="cwo-type-card" for="type-breakdown">
+                    <input type="radio" id="type-breakdown" name="maintenance_type" value="Breakdown" hidden />
+                    <span class="cwo-type-card__icon">🔴</span>
+                    <span class="cwo-type-card__label">Breakdown</span>
+                </label>
+
+            </div>
+        </div>
+
+        <!-- ── Section 3: Work Details ────────────────── -->
+        <div class="cwo-card">
+            <h2 class="cwo-card__title">Work Details</h2>
+
+            <div class="cwo-field">
+                <label class="cwo-label" for="cwo-description">Description <span class="cwo-required">*</span></label>
+                <textarea id="cwo-description" name="description" class="cwo-textarea" rows="4"
+                    placeholder="Describe the maintenance work required in detail..." required></textarea>
+                <span class="cwo-error-msg" id="cwo-description-error"></span>
+            </div>
+
+            <div class="cwo-row">
+                <!-- Priority -->
+                <div class="cwo-field">
+                    <label class="cwo-label">Priority</label>
+                    <div class="cwo-priority-group" id="cwo-priority-group">
+                        <label class="cwo-priority-pill cwo-priority-pill--active cwo-priority-pill--normal" for="priority-normal">
+                            <input type="radio" id="priority-normal" name="priority" value="Normal" checked hidden />
+                            <span class="cwo-priority-dot cwo-priority-dot--green"></span>
+                            Normal
+                        </label>
+                        <label class="cwo-priority-pill cwo-priority-pill--urgent" for="priority-urgent">
+                            <input type="radio" id="priority-urgent" name="priority" value="Urgent" hidden />
+                            <span class="cwo-priority-dot cwo-priority-dot--red"></span>
+                            Urgent
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Estimated Start Date -->
+                <div class="cwo-field">
+                    <label class="cwo-label" for="cwo-start-date">Estimated Start Date</label>
+                    <input type="date" id="cwo-start-date" name="start_date" class="cwo-input" />
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Section 4: Assign Mechanic ─────────────── -->
+        <div class="cwo-card">
+            <h2 class="cwo-card__title">Assign Mechanic</h2>
+            <div class="cwo-field">
+                <label class="cwo-label" for="cwo-mechanic">Mechanic <span class="cwo-optional">(optional)</span></label>
+                <select id="cwo-mechanic" name="mechanic" class="cwo-select cwo-select--full">
+                    <option value="">— Leave unassigned for now —</option>
+                    <option value="karim">Karim Mohamed</option>
+                    <option value="omar">Omar Youssef</option>
+                    <option value="ahmed">Ahmed Sayed</option>
+                </select>
+                <p class="cwo-helper-text">If no mechanic is assigned, the work order will be open for assignment later.</p>
+            </div>
+        </div>
+
+        <!-- ── Section 5: Attachments ──────────────────── -->
+        <div class="cwo-card">
+            <h2 class="cwo-card__title">Attachments <span class="cwo-optional">(Optional)</span></h2>
+            <div class="cwo-dropzone" id="cwo-dropzone">
+                <input type="file" id="cwo-file-input" class="cwo-dropzone__input" multiple accept=".pdf,.png,.jpg,.jpeg" />
+                <div class="cwo-dropzone__body">
+                    <span class="cwo-dropzone__icon">📎</span>
+                    <p class="cwo-dropzone__label">Upload documents or photos</p>
+                    <p class="cwo-dropzone__hint">PDF, PNG, JPG up to 10MB</p>
+                </div>
+                <div id="cwo-file-list" class="cwo-file-list"></div>
+            </div>
+        </div>
+
+        <!-- ── Form Actions ──────────────────────────── -->
+        <div class="cwo-actions">
+            <button type="submit" class="cwo-btn cwo-btn--primary">Create Work Order</button>
+            <a class="cwo-btn cwo-btn--ghost" href="/work-orders" data-link data-cancel-nav>Cancel</a>
+        </div>
+
+    </form>
+</section>

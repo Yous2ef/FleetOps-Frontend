@@ -1,15 +1,50 @@
 ﻿<section class="view-page technician-assignment-page stack">
-    <section class="card stack">
-        <span class="chip neutral">Maintenance Module</span>
+    <section class="ta-page-header">
         <h1 class="heading-lg">Technician Assignment</h1>
-        <p>Distribute tasks based on technician skills, shift windows, and workload.</p>
-    </section>
-
-    <section class="card stack">
-        <h2 class="heading-md">Quick Notes</h2>
-        <p>
-            This page is ready as an independent route and can now be connected
-            to live API data and business actions.
+        <p class="ta-page-header__subtitle">
+            Select an unassigned work order, then click Assign on a mechanic.
         </p>
     </section>
+
+    <section class="ta-layout">
+        <section class="ta-panel ta-panel--orders" aria-labelledby="ta-orders-title">
+            <header class="ta-panel__header">
+                <div class="ta-panel__title-wrap">
+                    <span class="ta-panel__icon" aria-hidden="true">
+                        <i data-lucide="clipboard-list"></i>
+                    </span>
+                    <h2 class="ta-panel__title" id="ta-orders-title">Unassigned Work Orders</h2>
+                </div>
+                <span class="ta-count-badge" id="ta-work-order-count">0</span>
+            </header>
+
+            <div
+                class="ta-panel__body ta-work-order-list"
+                id="ta-work-order-list"
+                aria-live="polite"
+            ></div>
+        </section>
+
+        <section class="ta-panel ta-panel--roster" aria-labelledby="ta-roster-title">
+            <header class="ta-panel__header ta-panel__header--roster">
+                <div class="ta-panel__title-wrap">
+                    <span class="ta-panel__icon" aria-hidden="true">
+                        <i data-lucide="users-round"></i>
+                    </span>
+                    <h2 class="ta-panel__title" id="ta-roster-title">Mechanic Roster</h2>
+                </div>
+                <span class="ta-assignment-hint" id="ta-assignment-hint">
+                    Select a work order to enable assignments
+                </span>
+            </header>
+
+            <div
+                class="ta-panel__body ta-mechanic-roster"
+                id="ta-mechanic-roster"
+                aria-live="polite"
+            ></div>
+        </section>
+    </section>
+
+    <div id="ta-modal-root"></div>
 </section>

@@ -1,6 +1,413 @@
-﻿.technician-assignment-page {
+.technician-assignment-page {
     max-width: 1100px;
     margin: 0 auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.ta-page-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ta-page-header__subtitle {
+    color: var(--color-text-body);
+    font-size: 15px;
+    margin: 0;
+}
+
+.ta-layout {
     display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* Panels */
+.ta-panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.ta-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--color-surface-low);
+}
+
+.ta-panel__title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ta-panel__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+}
+
+.ta-panel__icon .lucide {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2.5;
+}
+
+.ta-panel__title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text-title);
+    margin: 0;
+}
+
+.ta-count-badge {
+    background: #fff5f2;
+    color: var(--color-primary);
+    font-weight: 700;
+    font-size: 13px;
+    min-width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    border-radius: 99px;
+}
+
+.ta-assignment-hint {
+    display: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4338ca;
+    background: #e0e7ff;
+    padding: 6px 14px;
+    border-radius: 99px;
+}
+
+.ta-assignment-hint.is-active {
+    display: inline-flex;
+}
+
+/* Work Order List */
+.ta-work-order-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.ta-work-order-card {
+    padding: 24px;
+    border-bottom: 1px solid var(--color-surface-low);
+    border-left: 4px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.2s, border-left-color 0.2s;
+}
+
+.ta-work-order-card:last-child {
+    border-bottom: none;
+}
+
+.ta-work-order-card:hover {
+    background: var(--color-surface-highest);
+}
+
+.ta-work-order-card.is-selected {
+    background: #fff5f2;
+    border-left-color: var(--color-primary);
+}
+
+.ta-work-order-card__top {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.ta-work-order-card__title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ta-work-order-card__id {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text-title);
+    margin: 0;
+    font-family: var(--font-family-display);
+    letter-spacing: 0.5px;
+}
+
+.ta-work-order-card__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ta-pill {
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 99px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ta-pill--routine {
+    background: #eee8ff;
+    color: #6b21a8;
+}
+
+.ta-pill--normal {
+    background: var(--color-surface-strong);
+    color: var(--color-text-body);
+}
+
+.ta-pill--emergency {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.ta-pill--urgent {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.ta-pill--urgent::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
+}
+
+.ta-work-order-card__meta {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ta-work-order-card__meta strong {
+    color: var(--color-text-title);
+    font-weight: 600;
+}
+
+.ta-work-order-card__dot {
+    color: var(--color-placeholder);
+}
+
+.ta-work-order-card__description {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Mechanic Roster */
+.ta-mechanic-roster {
+    display: flex;
+    flex-direction: column;
+}
+
+.ta-mechanic-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--color-surface-low);
+}
+
+.ta-mechanic-card:last-child {
+    border-bottom: none;
+}
+
+.ta-mechanic-card__identity {
+    display: flex;
+    align-items: center;
     gap: 16px;
+}
+
+.ta-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.ta-mechanic-card:nth-child(4n+1) .ta-avatar { background: #6366f1; }
+.ta-mechanic-card:nth-child(4n+2) .ta-avatar { background: #7c3aed; }
+.ta-mechanic-card:nth-child(4n+3) .ta-avatar { background: #8b5cf6; }
+.ta-mechanic-card:nth-child(4n+4) .ta-avatar { background: #5c6bc0; }
+
+.ta-mechanic-card__heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.ta-mechanic-card__name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text-title);
+    margin: 0;
+}
+
+.ta-mechanic-card__code {
+    font-size: 13px;
+    color: var(--color-placeholder);
+}
+
+.ta-mechanic-card__meta {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ta-mechanic-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.ta-status-badge {
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-flex;
+    white-space: nowrap;
+}
+
+.ta-status-badge--busy {
+    background: #fef3c7; 
+    color: #d97706;
+}
+
+.ta-status-badge--available {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.ta-status-badge--off-duty {
+    background: var(--color-surface-strong);
+    color: var(--color-text-body);
+}
+
+.ta-assign-button {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s, opacity 0.2s;
+}
+
+.ta-assign-button:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+}
+
+.ta-assign-button .lucide {
+    width: 16px;
+    height: 16px;
+}
+
+.ta-assign-button.is-disabled, 
+.ta-assign-button:disabled {
+    background: var(--color-surface-strong, #f1f5f9);
+    color: var(--color-placeholder, #94a3b8);
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Modal */
+.ta-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.ta-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+}
+
+.ta-modal__dialog {
+    position: relative;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-floating);
+    width: 100%;
+    max-width: 440px;
+    padding: 32px;
+    z-index: 1001;
+}
+
+.ta-modal__content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ta-modal__title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text-title);
+    margin: 0;
+}
+
+.ta-modal__text {
+    font-size: 15px;
+    color: var(--color-text-body);
+    line-height: 1.5;
+    margin: 0 0 8px 0;
+}
+
+.ta-modal__text strong {
+    color: var(--color-text-title);
+}
+
+.ta-modal__actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+/* Empty State */
+.ta-empty-state {
+    padding: 40px;
+    text-align: center;
+    color: var(--color-text-muted);
 }

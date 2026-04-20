@@ -20,6 +20,26 @@ export const routes = [
         },
     },
     {
+        path: "/work-orders/details",
+        title: "Work Order Details",
+        navTitle: "Work Orders",
+        view: {
+            html: "/src/views/work-orders/details/view.html",
+            css: "/src/views/work-orders/details/view.css",
+            js: "/src/views/work-orders/details/view.js",
+        },
+    },
+    {
+        path: "/work-orders/create",
+        title: "Create Work Order",
+        navTitle: "Work Orders",
+        view: {
+            html: "/src/views/work-orders/create/view.html",
+            css: "/src/views/work-orders/create/view.css",
+            js: "/src/views/work-orders/create/view.js",
+        },
+    },
+    {
         path: "/vehicles",
         title: "Vehicles",
         navTitle: "Vehicles",

@@ -1,0 +1,539 @@
+/* =============================================
+   WORK ORDER DETAILS — view.css
+   ============================================= */
+
+.wod-page {    font-family: var(--font-family);
+    padding: 24px 32px 64px;
+    max-width: 1200px;
+    margin: 0 auto;
+    color: var(--color-text-body);
+}
+
+/* ── Header ──────────────────────────────── */
+.wod-header { margin-bottom: 24px; }
+
+.wod-back-link {
+    display: inline-block;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    margin-bottom: 16px;
+    transition: color 0.15s ease;
+}
+.wod-back-link:hover { color: var(--color-text-title); }
+
+.wod-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.wod-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wod-title {
+    font-family: var(--font-family-display);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-text-title);
+    margin: 0;
+}
+
+.wod-pills {
+    display: flex;
+    gap: 8px;
+}
+
+/* ── Generic Pill Styles ────────────────── */
+.wo-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 12px;
+    height: 24px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Status variants */
+.wo-pill--open { background: #f1f5f9; color: #475569; }
+.wo-pill--assigned { background: #ecfdf5; color: #059669; }
+.wo-pill--inprogress { background: #fef3c7; color: #b45309; }
+.wo-pill--resolved { background: #ecfdf5; color: #059669; }
+.wo-pill--closed { background-color: var(--color-secondary); color: #ffffff; }
+
+/* Type variants */
+.wo-pill--routine { background: #f0f9ff; color: #0369a1; }
+.wo-pill--breakdown { background: #ffedd5; color: #9a3412; }
+.wo-pill--emergency { background: #fee2e2; color: #b91c1c; }
+
+/* Priority */
+.wo-pill--urgent { background: #fee2e2; color: #b91c1c; }
+.wo-pill--urgent::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    background: #ef4444;
+    border-radius: 50%;
+}
+.wo-pill--normal { background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; }
+
+.wod-subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+/* ── Layout ─────────────────────────────── */
+.wod-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+/* ── Common Card Styles ─────────────────── */
+.wod-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 32px;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.wod-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.wod-card-title {
+    font-family: var(--font-family-display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text-title);
+    margin: 0;
+    margin-bottom: 16px;
+}
+.wod-card-header .wod-card-title { margin-bottom: 0; }
+
+.wod-link-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    transition: opacity 0.15s ease;
+}
+.wod-link-text:hover { opacity: 0.8; }
+
+.wod-btn-link {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-family);
+    padding: 0;
+}
+
+/* ── Vehicle Grid ───────────────────────── */
+.wod-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto;
+    gap: 32px 20px;
+}
+
+.wod-data-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+}
+.wod-data-group p {
+    margin: 0;
+    font-size: 15px;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+/* ── Description ────────────────────────── */
+.wod-desc-text {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+}
+
+/* ── Repair Log ─────────────────────────── */
+.wod-repair-log {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.wod-log-item {
+    display: flex;
+    gap: 16px;
+}
+
+.wod-log-indicator {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--color-surface-low);
+    color: var(--color-text-title);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.wod-log-indicator--orange {
+    background: var(--color-primary);
+    color: white;
+}
+
+.wod-log-content { flex: 1; }
+
+.wod-log-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+.wod-log-header h3 {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-title);
+}
+.wod-log-header span {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.wod-log-content p {
+    margin: 0 0 6px 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.wod-log-meta {
+    font-size: 11px;
+    color: #9aa3b2;
+}
+
+/* ── Parts Table ────────────────────────── */
+.wod-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.wod-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    padding: 10px 12px;
+    background: #f8fafc;
+}
+
+.wod-table td {
+    padding: 12px;
+    font-size: var(--font-size-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.wod-align-right { text-align: right !important; }
+.wod-font-bold { font-weight: 600; color: var(--color-text-title); }
+
+.wod-table-footer {
+    padding-top: 16px !important;
+    border-bottom: none !important;
+}
+
+/* ── Summary Row ────────────────────────── */
+.wod-summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: var(--font-size-sm);
+}
+.wod-summary-total {
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+    font-weight: 700;
+    color: var(--color-text-title);
+}
+.wod-color-primary { color: var(--color-primary); }
+
+/* ── Attachments ────────────────────────── */
+.wod-attachments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+}
+.wod-attachment-item {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.wod-attachment-preview {
+    height: 100px;
+    background: var(--color-surface-low);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+}
+.wod-attachment-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.wod-attachment-icon { font-size: 32px; }
+.wod-attachment-info {
+    padding: 8px 10px;
+    font-size: 11px;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+}
+.wod-attachment-name {
+    font-weight: 600;
+    color: var(--color-text-title);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* ── Timeline ───────────────────────────── */
+.wod-timeline {
+    position: relative;
+    padding-top: 8px;
+    padding-left: 6px;
+}
+
+.wod-step {
+    position: relative;
+    padding-left: 28px;
+    padding-bottom: 24px;
+}
+
+.wod-step.wod-step--last { padding-bottom: 0; }
+
+.wod-step-dot {
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--color-surface);
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    z-index: 2;
+}
+
+.wod-step--done .wod-step-dot,
+.wod-step--active .wod-step-dot {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+.wod-step-line {
+    position: absolute;
+    left: 7px;
+    top: 18px;
+    bottom: -2px;
+    width: 2px;
+    background: #e2e8f0;
+    z-index: 1;
+}
+
+.wod-step--done .wod-step-line {
+    background: var(--color-primary);
+}
+
+.wod-step-content h3 {
+    margin: 0 0 2px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+.wod-step-content p {
+    margin: 0;
+    font-size: 11px;
+    color: #9aa3b2;
+}
+
+.wod-step--done .wod-step-content h3,
+.wod-step--active .wod-step-content h3 {
+    color: var(--color-text-title);
+}
+
+/* ── Assignment Box ─────────────────────── */
+.wod-assignment-box {
+    margin-top: 12px;
+}
+.wod-assignee-flex {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.wod-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--color-surface-low);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--color-text-title);
+}
+.wod-avatar--km { background: #6366f1; color: white; }
+.wod-avatar--oy { background: #10b981; color: white; }
+.wod-avatar--as { background: #f59e0b; color: white; }
+
+.wod-assignee-details h3 {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-title);
+}
+.wod-assignee-details span {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.wod-assigned-by {
+    margin-top: 12px;
+    font-size: 11px;
+    color: #9aa3b2;
+}
+.wod-assigned-by p { margin: 0 0 2px; }
+
+/* Edit form */
+.wod-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 8px;}
+.wod-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--color-outline);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+.wod-edit-actions { display: flex; gap: 8px; }
+.wod-btn {
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.wod-btn--primary { background: var(--color-primary); color: white; }
+.wod-btn--ghost { background: var(--color-surface-low); color: var(--color-text-body); }
+
+/* ── Lightbox Modal ─────────────────────── */
+.wod-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.wod-lightbox--open { display: flex; }
+.wod-lightbox-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(4px);
+}
+.wod-lightbox-content {
+    position: relative;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    z-index: 10000;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.wod-lightbox-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: var(--color-surface-highest);
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--color-text-title);
+    z-index: 2;
+    transition: all 0.15s ease;
+}
+.wod-lightbox-close:hover {
+    background: var(--color-danger);
+    color: white;
+    border-color: var(--color-danger);
+}
+.wod-lightbox-body {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-surface-low);
+    min-height: 300px;
+}
+.wod-lightbox-body img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+.wod-lightbox-footer {
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-title);
+    border-top: 1px solid var(--color-border);
+}

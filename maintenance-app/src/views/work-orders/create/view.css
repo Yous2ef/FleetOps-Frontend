@@ -1,0 +1,388 @@
+/* =============================================
+   CREATE WORK ORDER — view.css
+   Uses tokens from ../../styles/main.css
+   ============================================= */
+
+/* ── Page layout ─────────────────────────── */
+.cwo-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 28px 32px 48px;
+    max-width: 620px;          /* matches screenshot narrow single column */
+    width: 100%;
+    box-sizing: border-box;
+    font-family: var(--font-family);
+}
+
+/* ── Page header ─────────────────────────── */
+.cwo-header {
+    margin-bottom: 4px;
+}
+
+.cwo-header__title {
+    font-family: var(--font-family-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-text-title);
+    margin: 0 0 4px;
+    line-height: 1.2;
+}
+
+.cwo-header__subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+/* ── Card sections ───────────────────────── */
+.cwo-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.cwo-card__title {
+    font-family: var(--font-family-display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text-title);
+    margin: 0;
+}
+
+/* ── Labels & helpers ────────────────────── */
+.cwo-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cwo-label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-body);
+}
+
+.cwo-required {
+    color: var(--color-danger);
+    margin-left: 2px;
+}
+
+.cwo-optional {
+    font-weight: 400;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.cwo-helper-text {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.cwo-error-msg {
+    font-size: var(--font-size-xs);
+    color: var(--color-danger);
+    min-height: 16px;
+    display: block;
+}
+
+/* ── Inputs, selects, textarea ───────────── */
+.cwo-input,
+.cwo-select,
+.cwo-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--color-outline);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    font-family: var(--font-family);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-title);
+    outline: none;
+    box-sizing: border-box;
+    min-height: unset;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    scroll-margin-top: 100px;
+}
+
+.cwo-input:focus,
+.cwo-select:focus,
+.cwo-textarea:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.cwo-input--error,
+.cwo-select--error,
+.cwo-textarea--error {
+    border-color: var(--color-danger) !important;
+    box-shadow: 0 0 0 3px rgba(213, 45, 31, 0.12) !important;
+}
+
+.cwo-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa3b2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    cursor: pointer;
+}
+
+.cwo-select--full { width: 100%; }
+
+.cwo-textarea {
+    resize: vertical;
+    min-height: 110px;
+    line-height: 1.6;
+}
+
+/* ── Two-column row (Priority + Date) ────── */
+.cwo-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* ── Maintenance Type cards ──────────────── */
+.cwo-type-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.cwo-type-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 16px;
+    border: 1px solid var(--color-outline);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    user-select: none;
+}
+
+.cwo-type-card:hover {
+    border-color: var(--color-primary);
+}
+
+.cwo-type-card--active {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(244, 102, 57, 0.18);
+}
+
+.cwo-type-card__icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.cwo-type-card__label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-title);
+}
+
+.cwo-type-card--active .cwo-type-card__label {
+    color: var(--color-primary);
+}
+
+/* ── Priority pills ──────────────────────── */
+.cwo-priority-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cwo-priority-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border: 2px solid var(--color-outline);
+    border-radius: 999px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-body);
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+    user-select: none;
+}
+
+.cwo-priority-pill:hover {
+    border-color: var(--color-primary);
+}
+
+.cwo-priority-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.cwo-priority-dot--green { background-color: #10b981; }
+.cwo-priority-dot--red   { background-color: #ef4444; }
+
+.cwo-priority-pill--active {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* ── Drop zone (Attachments) ─────────────── */
+.cwo-dropzone {
+    position: relative;
+    border: 1.5px dashed var(--color-outline);
+    border-radius: var(--radius-sm);
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.cwo-dropzone:hover,
+.cwo-dropzone--dragover {
+    border-color: var(--color-primary);
+    background-color: rgba(244, 102, 57, 0.03);
+}
+
+.cwo-dropzone__input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    min-height: unset;
+    border: none;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+}
+
+.cwo-dropzone__body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.cwo-dropzone__icon {
+    font-size: 24px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.cwo-dropzone__label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-body);
+    margin: 0;
+}
+
+.cwo-dropzone__hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+/* Attached file list */
+.cwo-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.cwo-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--color-surface-highest);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-body);
+}
+
+.cwo-file-item__name {
+    font-weight: 500;
+    color: var(--color-text-title);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 320px;
+}
+
+.cwo-file-item__remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+    transition: color 0.15s ease;
+    min-height: unset;
+    width: auto;
+}
+
+.cwo-file-item__remove:hover {
+    color: var(--color-danger);
+}
+
+/* ── Form actions row ────────────────────── */
+.cwo-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* ── Buttons ─────────────────────────────── */
+.cwo-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 22px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    font-family: var(--font-family);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.18s ease, transform 0.12s ease;
+}
+
+.cwo-btn:hover  { transform: translateY(-1px); }
+.cwo-btn:active { transform: translateY(0); }
+
+.cwo-btn--primary {
+    background-color: var(--color-primary);
+    color: var(--color-cta-text);
+    border-color: var(--color-primary);
+}
+.cwo-btn--primary:hover { background-color: var(--color-primary-hover); }
+
+.cwo-btn--ghost {
+    background-color: transparent;
+    color: var(--color-text-body);
+    border-color: transparent;
+}
+.cwo-btn--ghost:hover {
+    background-color: var(--color-surface-low);
+    color: var(--color-text-title);
+}
