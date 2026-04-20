@@ -18,7 +18,7 @@ export function initRouter({ outletId }) {
             currentRouteModule.unmount(outlet);
         }
 
-        const htmlResponse = await fetch(activeRoute.view.html);
+        const htmlResponse = await fetch(new URL("../.." + activeRoute.view.html, import.meta.url).href);
         if (!htmlResponse.ok) {
             throw new Error(
                 `Failed to load HTML view: ${activeRoute.view.html}`,
@@ -33,7 +33,7 @@ export function initRouter({ outletId }) {
 
         const stylesheet = document.createElement("link");
         stylesheet.rel = "stylesheet";
-        stylesheet.href = activeRoute.view.css;
+        stylesheet.href = new URL("../.." + activeRoute.view.css, import.meta.url).href;
         stylesheet.dataset.routeStyle = activeRoute.path;
         document.head.appendChild(stylesheet);
 
@@ -41,11 +41,11 @@ export function initRouter({ outletId }) {
         document.title = activeRoute.title;
         outlet.innerHTML = html;
 
-        const routeModule = await import(activeRoute.view.js);
+        const routeModule = await import(new URL("../.." + activeRoute.view.js, import.meta.url).href);
         currentRouteModule = routeModule;
 
         if (routeModule.mount) {
-            routeModule.mount(outlet);
+            await routeModule.mount(outlet);
         }
 
         setActiveLink(activeRoute.path);
@@ -87,7 +87,7 @@ export function initRouter({ outletId }) {
     }
 
     function setActiveLink(pathname) {
-        const navLinks = document.querySelectorAll(".navbar__link[data-route]");
+        const navLinks = document.querySelectorAll(".nav-link[data-route]");
 
         navLinks.forEach((link) => {
             const linkRoute = link.getAttribute("data-route");

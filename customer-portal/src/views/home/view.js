@@ -1,32 +1,42 @@
-// API handler usage example
-import UsersStorage from "../../services/api/users.js";
+import { fetchShipments, fetchShipmentStats } from '../../services/api/shipments.js';
 
-let clickHandler;
+let cleanups = [];
 
-export function mount(rootElement) {
-    const button = rootElement.querySelector("#home-action");
-    const message = rootElement.querySelector("#home-message");
+export async function mount(root) {
+    cleanups.length = 0;
+    
+    // Fetch Data
+    const [statsRes, shipRes] = await Promise.all([
+        fetchShipmentStats(),
+        fetchShipments()
+    ]);
 
-    if (!button || !message) {
-        return;
+    if (!document.body.contains(root)) return; // unmounted while fetching
+    
+    // Render KPIs
+    const kpiGrid = root.querySelector('#kpi-grid');
+    if (kpiGrid && statsRes.data) {
+        kpiGrid.innerHTML = `
+            <div class="card kpi-card">Total Shipments <span>${statsRes.data.total}</span></div>
+            <div class="card kpi-card">Active Routes <span>${statsRes.data.active}</span></div>
+        `;
     }
 
-    clickHandler = () => {
-        message.textContent = `Api test run at ${new Date().toLocaleTimeString()}.
-        All users: ${JSON.stringify(UsersStorage.getAllUsersMockData())}
-        User by ID (USR-1002): ${JSON.stringify(UsersStorage.getUserByIdMockData("USR-1002"))}
-        Users by Status (active): ${JSON.stringify(UsersStorage.getUsersByStatusMockData("active"))}`;
-    };
-
-    button.addEventListener("click", clickHandler);
+    // Render Table
+    const tbody = root.querySelector('#home-shipments-table tbody');
+    if (tbody && shipRes.data) {
+        tbody.innerHTML = shipRes.data.map(s => `
+            <tr>
+                <td>${s.id}</td>
+                <td>${s.origin} &rarr; ${s.dest}</td>
+                <td><span class="badge badge--${s.status}">${s.status.replace('_', ' ')}</span></td>
+            </tr>
+        `).join('');
+    }
 }
 
-export function unmount(rootElement) {
-    const button = rootElement.querySelector("#home-action");
-
-    if (button && clickHandler) {
-        button.removeEventListener("click", clickHandler);
-    }
-
-    clickHandler = null;
+export function unmount(root) {
+    cleanups.forEach(fn => fn());
+    cleanups = [];
+    root.innerHTML = '';
 }

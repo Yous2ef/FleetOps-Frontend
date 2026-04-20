@@ -1,9 +1,24 @@
-<section class="view-page home-page stack">
-    <h1 class="heading-lg">Customer Portal</h1>
-    <p>Public tracking portal served by the shared orchestrator.</p>
-    <p>Navigate using the top menu. Content swaps without full page reload.</p>
-    <button id="home-action" class="button primary" type="button">
-        Run Api Test
-    </button>
-    <p id="home-message" class="helper-text"></p>
-</section>
+<div class="home-view">
+    <header class="home-header">
+        <h1>Dashboard</h1>
+        <p>Welcome back! Here are your fleet statistics.</p>
+    </header>
+    <div class="kpi-grid" id="kpi-grid">
+        <div class="card kpi-card"><p>Loading stats...</p></div>
+    </div>
+    <div class="card recent-shipments">
+        <h2>Recent Shipments</h2>
+        <table class="table" id="home-shipments-table">
+            <thead>
+                <tr>
+                    <th>Tracking ID</th>
+                    <th>Route</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="3">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

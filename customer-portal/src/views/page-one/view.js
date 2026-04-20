@@ -1,31 +1,62 @@
-let clickHandler;
-let counter = 0;
+import { fetchShipments } from '../../services/api/shipments.js';
 
-export function mount(rootElement) {
-    const button = rootElement.querySelector("#page-one-increase");
-    const label = rootElement.querySelector("#page-one-counter-label");
+let cleanups = [];
+let allShipments = [];
 
-    if (!button || !label) {
+function renderTable(root, data) {
+    const tbody = root.querySelector('#full-shipments-table tbody');
+    const noResults = root.querySelector('#no-results');
+    const table = root.querySelector('#full-shipments-table');
+    
+    if (!tbody) return;
+
+    if (data.length === 0) {
+        table.style.display = 'none';
+        noResults.style.display = 'block';
         return;
     }
 
-    counter = 0;
-    label.textContent = `Counter: ${counter}`;
-
-    clickHandler = () => {
-        counter += 1;
-        label.textContent = `Counter: ${counter}`;
-    };
-
-    button.addEventListener("click", clickHandler);
+    table.style.display = 'table';
+    noResults.style.display = 'none';
+    tbody.innerHTML = data.map(s => `
+        <tr>
+            <td><strong>${s.id}</strong></td>
+            <td>${s.origin}</td>
+            <td>${s.dest}</td>
+            <td>${s.date}</td>
+            <td><span class="badge badge--${s.status}">${s.status.replace('_', ' ')}</span></td>
+        </tr>
+    `).join('');
 }
 
-export function unmount(rootElement) {
-    const button = rootElement.querySelector("#page-one-increase");
+export async function mount(root) {
+    cleanups.length = 0;
+    
+    const res = await fetchShipments();
+    if (!document.body.contains(root)) return;
+    
+    allShipments = res.data || [];
+    renderTable(root, allShipments);
 
-    if (button && clickHandler) {
-        button.removeEventListener("click", clickHandler);
+    const searchInput = root.querySelector('#shipment-search');
+    if (searchInput) {
+        const handleSearch = (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = allShipments.filter(s => 
+                s.id.toLowerCase().includes(query) ||
+                s.origin.toLowerCase().includes(query) ||
+                s.dest.toLowerCase().includes(query)
+            );
+            renderTable(root, filtered);
+        };
+        searchInput.addEventListener('input', handleSearch);
+        cleanups.push(() => searchInput.removeEventListener('input', handleSearch));
     }
+}
 
-    clickHandler = null;
+export function unmount(root) {
+    cleanups.forEach(fn => fn());
+    cleanups = [];
+    allShipments = [];
+    root.innerHTML = '';
 }

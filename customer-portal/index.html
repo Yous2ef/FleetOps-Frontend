@@ -1,42 +1,96 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Customer Portal</title>
-        <link rel="icon" href="data:," />
-        <link rel="stylesheet" href="./src/styles/main.css" />
-    </head>
-    <body>
-        <nav class="navbar" aria-label="Main navigation">
-            <div class="navbar__brand">Customer Portal</div>
-            <div class="navbar__links">
-                <a class="navbar__link" href="/" data-link data-route="/"
-                    >Main Page</a
-                >
-                <a
-                    class="navbar__link"
-                    href="/page-one"
-                    data-link
-                    data-route="/page-one"
-                    >Page One</a
-                >
-                <a
-                    class="navbar__link"
-                    href="/preview-page"
-                    data-link
-                    data-route="/preview-page"
-                    >Template Page</a
-                >
-            </div>
-        </nav>
 
-        <main id="app-content" class="app-content" aria-live="polite"></main>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FleetOps | Customer Portal</title>
 
-        <footer class="footer">
-            <p>&copy; 2024 Fleet Tracking Platform. All rights reserved.</p>
-        </footer>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
 
-        <script type="module" src="./src/main.js"></script>
-    </body>
+  <link rel="stylesheet" href="./src/styles/main.css">
+</head>
+
+<body>
+
+  <div id="app-shell">
+    <aside id="sidebar">
+      <div class="sidebar__brand">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+        </svg>
+        FleetOps
+      </div>
+
+      <nav class="sidebar__nav">
+        <ul>
+          <li>
+            <a href="/" class="nav-link" data-route="/">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="margin-right: 12px;">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="/page-one" class="nav-link" data-route="/page-one">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="margin-right: 12px;">
+                <rect x="1" y="3" width="15" height="13"></rect>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+              </svg>
+              Shipments
+            </a>
+          </li>
+          <li>
+            <a href="/preview-page" class="nav-link" data-route="/preview-page">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="margin-right: 12px;">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                </path>
+              </svg>
+              Settings
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <div id="content-wrapper">
+      <header id="topbar">
+        <div style="display: flex; align-items: center;">
+          <button id="sidebar-toggle" aria-label="Toggle Menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div id="topbar-page-title" class="text-display">Overview</div>
+        </div>
+
+        <div id="topbar-clock">--:-- --</div>
+      </header>
+
+      <main id="app-content"></main>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+
 </html>

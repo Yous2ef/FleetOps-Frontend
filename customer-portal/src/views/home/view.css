@@ -1,11 +1,7 @@
-.home-page {
-    background: linear-gradient(
-        140deg,
-        var(--color-surface),
-        var(--color-surface-low)
-    );
-    border: 1px solid var(--color-border);
-    border-radius: 18px;
-    padding: 24px;
-    box-shadow: var(--shadow-sm);
-}
+.home-view { display: flex; flex-direction: column; gap: 20px; }
+.home-header h1 { font-size: 1.8rem; margin-bottom: 5px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+.kpi-card { text-align: center; font-size: 1.2rem; font-weight: bold; }
+.kpi-card span { font-size: 2rem; color: var(--accent-primary); display: block; margin-top: 10px; }
+.recent-shipments { margin-top: 20px; }
+.recent-shipments h2 { margin-bottom: 15px; font-size: 1.3rem; }
