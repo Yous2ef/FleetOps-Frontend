@@ -18,7 +18,7 @@ export function initRouter({ outletId }) {
             currentRouteModule.unmount(outlet);
         }
 
-        const htmlResponse = await fetch(activeRoute.view.html);
+        const htmlResponse = await fetch(new URL("../.." + activeRoute.view.html, import.meta.url).href);
         if (!htmlResponse.ok) {
             throw new Error(
                 `Failed to load HTML view: ${activeRoute.view.html}`,
@@ -33,7 +33,7 @@ export function initRouter({ outletId }) {
 
         const stylesheet = document.createElement("link");
         stylesheet.rel = "stylesheet";
-        stylesheet.href = activeRoute.view.css;
+        stylesheet.href = new URL("../.." + activeRoute.view.css, import.meta.url).href;
         stylesheet.dataset.routeStyle = activeRoute.path;
         document.head.appendChild(stylesheet);
 
@@ -41,11 +41,7 @@ export function initRouter({ outletId }) {
         document.title = activeRoute.title;
         outlet.innerHTML = html;
 
-        // بننظف المسار ونرجع خطوتين لورا عشان الـ import يقرأ من الـ Root صح
-        const cleanPath = activeRoute.view.js.replace(/^\.\//, ""); 
-        const modulePath = "../../" + cleanPath;
-        
-        const routeModule = await import(modulePath);
+        const routeModule = await import(new URL("../.." + activeRoute.view.js, import.meta.url).href);
         currentRouteModule = routeModule;
 
         if (routeModule.mount) {

@@ -1,4 +1,0 @@
-.settings-view { display: flex; flex-direction: column; gap: 20px; }
-.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.settings-grid h2 { margin-bottom: 20px; font-size: 1.2rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px; }
-@media (max-width: 768px) { .settings-grid { grid-template-columns: 1fr; } }
