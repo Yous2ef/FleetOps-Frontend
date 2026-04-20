@@ -26,6 +26,15 @@ export const routes = [
             js: "/src/views/preview-page/view.js",
         },
     },
+    {
+    path: "/users",
+    title: "FleetOps Hub | User Management",
+    view: {
+        html: "/src/views/users/view.html",
+        css:  "/src/views/users/view.css",
+        js:   "/src/views/users/view.js",
+    },
+},
 ];
 
 export const notFoundRoute = {
