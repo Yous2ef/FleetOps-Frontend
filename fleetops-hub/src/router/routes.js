@@ -27,14 +27,32 @@ export const routes = [
         },
     },
     {
-    path: "/users",
-    title: "FleetOps Hub | User Management",
-    view: {
-        html: "/src/views/users/view.html",
-        css:  "/src/views/users/view.css",
-        js:   "/src/views/users/view.js",
+        path: "/users",
+        title: "FleetOps Hub | User Management",
+        view: {
+            html: "/src/views/users/view.html",
+            css: "/src/views/users/view.css",
+            js: "/src/views/users/view.js",
+        },
     },
-},
+    {
+        path: "/audit",
+        title: "FleetOps Hub | Audit Log",
+        view: {
+            html: "/src/views/audit/view.html",
+            css: "/src/views/audit/view.css",
+            js: "/src/views/audit/view.js",
+        },
+    },
+    {
+        path: "/settings",
+        title: "FleetOps Hub | Settings",
+        view: {
+            html: "/src/views/settings/view.html",
+            css: "/src/views/settings/view.css",
+            js: "/src/views/settings/view.js",
+        },
+    },
 ];
 
 export const notFoundRoute = {
