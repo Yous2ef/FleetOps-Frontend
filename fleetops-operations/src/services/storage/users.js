@@ -1,3 +1,4 @@
+const USERS_STORAGE_KEY = 'fleetops_users';
 const usersMockData = [
     {
         id: "USR-1001",
@@ -58,3 +59,6 @@ const usersMockData = [
 
 
 export { usersMockData };
+
+let initialMockData = [...usersMockData];
+export {USERS_STORAGE_KEY, initialMockData};

@@ -1,4 +1,183 @@
-.audit-trail-page {
-    max-width: 1080px;
-    margin: 0 auto;
+.audit-container {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.audit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.audit-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.audit-filter-group {
+    flex: 1;
+    min-width: 130px;
+}
+
+.audit-filter-group .label {
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.audit-filter-search {
+    flex: 2;
+    min-width: 240px;
+}
+
+/* We don't want a label above search to keep it aligned, but we need it vertically centered or full height */
+.audit-filter-search input {
+    height: 44px; /* Matches normal input/select */
+}
+
+.audit-table-wrapper {
+    overflow-x: auto;
+    padding: 0; /* Override generic card padding */
+}
+
+.audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.audit-table th,
+.audit-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+}
+
+.audit-table th {
+    background: var(--color-surface-low);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.audit-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.audit-table tbody tr:hover {
+    background: var(--color-surface-highest);
+}
+
+.audit-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.log-id {
+    font-weight: 700;
+    color: var(--color-text-title);
+    font-family: monospace;
+    font-size: 14px;
+}
+
+.audit-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.badge-created {
+    background: var(--color-chip-success-bg);
+    color: var(--color-chip-success-text);
+}
+
+.badge-updated {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.badge-deleted {
+    background: #fee2e2;
+    color: var(--color-danger);
+}
+
+/* For Details column to allow wrapping and look clean */
+.audit-table td:last-child {
+    white-space: normal;
+    min-width: 300px;
+}
+
+.log-details-text {
+    font-weight: 500;
+    color: var(--color-text-title);
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.changes-viewer {
+    display: flex;
+    gap: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 12px;
+}
+
+.changes-box {
+    flex: 1;
+    background: var(--color-surface-low);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 10px;
+    overflow-x: auto;
+}
+
+.changes-box.old {
+    border-left: 4px solid #f87171;
+}
+
+.changes-box.new {
+    border-left: 4px solid #34d399;
+}
+
+.changes-label {
+    font-weight: 700;
+    color: var(--color-text-muted);
+    margin-bottom: 6px;
+    display: block;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+}
+
+.changes-box pre {
+    margin: 0;
+    color: var(--color-text-body);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--color-text-muted);
 }

@@ -1,15 +1,126 @@
-﻿<section class="view-page spare-parts-page stack">
-    <section class="card stack">
-        <span class="chip neutral">Maintenance Module</span>
-        <h1 class="heading-lg">Spare Parts</h1>
-        <p>Manage stock levels, part requests, and replacement readiness for active jobs.</p>
-    </section>
+﻿<div class="inventory-container">
+    <div class="inventory-header">
+        <div class="header-content">
+            <h2><i class="fa-solid fa-cube text-primary"></i> Spare Parts Request</h2>
+            <p>View available inventory and request parts for vehicle maintenance</p>
+        </div>
+        <div class="header-actions">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="inventory-search" placeholder="Search by name, SKU, or ID..." />
+            </div>
+            <select id="category-filter" class="filter-select">
+                <option value="All">All Categories</option>
+                <option value="Engine Parts">Engine Parts</option>
+                <option value="Brakes">Brakes</option>
+                <option value="Tires">Tires</option>
+                <option value="Filters">Filters</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Fluids & Oils">Fluids & Oils</option>
+                <option value="Transmission">Transmission</option>
+                <option value="Suspension">Suspension</option>
+                <option value="Body Parts">Body Parts</option>
+            </select>
+        </div>
+    </div>
 
-    <section class="card stack">
-        <h2 class="heading-md">Quick Notes</h2>
-        <p>
-            This page is ready as an independent route and can now be connected
-            to live API data and business actions.
-        </p>
-    </section>
-</section>
+    <!-- Simplified Analytics specific to mechanics -->
+    <div class="inventory-analytics">
+        <div class="analytics-card">
+            <div class="card-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+            <div class="card-data">
+                <span class="card-label">Total Unique Parts</span>
+                <strong id="stat-total-items">0</strong>
+            </div>
+        </div>
+        <div class="analytics-card warning">
+            <div class="card-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="card-data">
+                <span class="card-label">Low Stock Warning</span>
+                <strong id="stat-low-stock">0</strong>
+            </div>
+        </div>
+        <div class="analytics-card danger">
+            <div class="card-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+            <div class="card-data">
+                <span class="card-label">Out of Stock</span>
+                <strong id="stat-out-stock">0</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="inventory-content">
+        <div class="content-toolbar">
+            <h3 id="tracked-parts-count">0 parts tracked</h3>
+            <div class="status-filters" id="status-filters">
+                <button class="pill active" data-status="All">All</button>
+                <button class="pill" data-status="In Stock">In Stock</button>
+                <button class="pill" data-status="Low Stock">Low Stock</button>
+                <button class="pill" data-status="Out of Stock">Out of Stock</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Part ID</th>
+                        <th>Name</th>
+                        <th>SKU</th>
+                        <th>Category</th>
+                        <th>Qty</th>
+                        <th>Status</th>
+                        <th>Stock Level</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="inventory-table-body">
+                    <!-- Rows rendered via JS -->
+                </tbody>
+            </table>
+            
+            <div class="empty-state" id="inventory-empty-state" style="display: none;">
+                <i class="fa-solid fa-box-open empty-icon"></i>
+                <h3>No parts found</h3>
+                <p>Try adjusting your search or filters to find what you need.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Request Part Modal -->
+<div class="modal-overlay" id="request-modal">
+    <div class="modal-content request-modal">
+        <button class="modal-close-icon close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+        <h3 id="request-modal-title">Request/Use Part</h3>
+        <p class="modal-subtitle" id="request-part-name">Engine Oil Filter (PRT-1001)</p>
+        
+        <form id="request-form">
+            <input type="hidden" id="req-part-id" />
+            <input type="hidden" id="req-max-qty" />
+            
+            <div class="form-group">
+                <label for="req-vehicle-id">Target Vehicle ID *</label>
+                <input type="text" id="req-vehicle-id" required placeholder="e.g. TRK-045" pattern="[A-Z]{3}-[0-9]{3}" title="Format: TRK-123" />
+            </div>
+            
+            <div class="form-group">
+                <label for="req-qty">Quantity to Use *</label>
+                <div class="qty-input-group">
+                    <input type="number" id="req-qty" required min="1" value="1" />
+                    <span class="max-qty-label" id="req-max-label">/ 25 available</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="req-notes">Maintenance Notes (Optional)</label>
+                <textarea id="req-notes" rows="3" placeholder="Reason for part replacement..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="button outlined close-modal-btn">Cancel</button>
+                <button type="submit" class="button primary" id="submit-request-btn"><i class="fa-solid fa-wrench"></i> Submit Request</button>
+            </div>
+        </form>
+    </div>
+</div>

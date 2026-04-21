@@ -1,8 +1,111 @@
-<section class="view-page app-section user-management-page stack">
-    <section class="card stack">
-        <h1 class="heading-lg">User Management</h1>
-        <p>This module is ready for implementation.</p>
-        <p class="helper-text">Use this section to build the user management workflow.</p>
-    </section>
+<section class="view-page users-page">
+
+    <div class="users-header">
+        <div class="users-header__info">
+            <h2 class="heading-md">User Management</h2>
+            <span id="users-count-label" class="users-count-pill">— members</span>
+        </div>
+        <div class="users-header__actions">
+            <button id="users-export-btn" class="button secondary" type="button">
+                <i class="fa-solid fa-download"></i>
+                Export
+            </button>
+            <button id="users-add-btn" class="button primary" type="button">
+                <i class="fa-solid fa-plus"></i>
+                Add User
+            </button>
+        </div>
+    </div>
+
+    <div class="users-toolbar">
+        <div class="search-field users-search">
+            <span class="search-icon">⌕</span>
+            <input id="users-search-input" type="text" placeholder="Search by name, email, or ID..." />
+        </div>
+        <div class="users-filter-tabs" id="users-filter-tabs">
+            <button class="filter-tab is-active" data-filter="all" type="button">All</button>
+            <button class="filter-tab" data-filter="customer" type="button">Customer</button>
+            <button class="filter-tab" data-filter="dispatcher" type="button">Dispatcher</button>
+            <button class="filter-tab" data-filter="supervisor" type="button">Supervisor</button>
+        </div>
+    </div>
+
+    <div class="users-table-wrapper">
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>City</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="users-table-body">
+                <tr>
+                    <td colspan="8" class="users-table__loading">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i>
+                        Loading users...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
 </section>
 
+<!-- Add/Edit User Modal -->
+<div id="users-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-labelledby="modal-title">
+        <div class="modal__header">
+            <h3 class="heading-md" id="modal-title">Add User</h3>
+            <button id="modal-close-btn" class="modal__close" type="button" aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body stack">
+            <div>
+                <label class="label" for="modal-name">Full Name</label>
+                <input id="modal-name" type="text" placeholder="e.g. Ahmed Hassan" />
+            </div>
+            <div>
+                <label class="label" for="modal-email">Email</label>
+                <input id="modal-email" type="email" placeholder="e.g. ahmed@example.com" />
+            </div>
+            <div>
+                <label class="label" for="modal-phone">Phone</label>
+                <input id="modal-phone" type="text" placeholder="e.g. +201001112233" />
+            </div>
+            <div>
+                <label class="label" for="modal-role">Role</label>
+                <select id="modal-role">
+                    <option value="">Select a role...</option>
+                    <option value="customer">Customer</option>
+                    <option value="dispatcher">Dispatcher</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="driver">Driver</option>
+                    <option value="mechanic">Mechanic</option>
+                </select>
+            </div>
+            <div>
+                <label class="label" for="modal-city">City</label>
+                <input id="modal-city" type="text" placeholder="e.g. Cairo" />
+            </div>
+            <div>
+                <label class="label" for="modal-status">Status</label>
+                <select id="modal-status">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal__footer">
+            <button id="modal-cancel-btn" class="button secondary" type="button">Cancel</button>
+            <button id="modal-save-btn" class="button primary" type="button">Save User</button>
+        </div>
+    </div>
+</div>

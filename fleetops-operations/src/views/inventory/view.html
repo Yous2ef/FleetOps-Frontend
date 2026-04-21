@@ -1,8 +1,182 @@
-<section class="view-page app-section inventory-page stack">
-    <section class="card stack">
-        <h1 class="heading-lg">Inventory</h1>
-        <p>This module is ready for implementation.</p>
-        <p class="helper-text">Use this section to build the inventory workflow.</p>
-    </section>
-</section>
+<div class="inventory-container">
+    <div class="inventory-header">
+        <div class="header-titles">
+            <h2 class="heading-lg">Inventory Management</h2>
+            <p class="helper-text" id="tracked-parts-count">0 parts tracked</p>
+        </div>
+        <div class="header-actions">
+            <button class="button secondary"><i class="fa-solid fa-download"></i> Export</button>
+            <button class="button primary" id="add-part-btn"><i class="fa-solid fa-plus"></i> Add Part</button>
+        </div>
+    </div>
 
+    <!-- Analytics Cards -->
+    <div class="analytics-cards">
+        <div class="card stat-card">
+            <div class="stat-title">TOTAL ITEMS <i class="fa-solid fa-cube" style="color: var(--color-primary)"></i></div>
+            <div class="stat-value" id="stat-total-items">0</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-title">TOTAL VALUE <i class="fa-solid fa-chart-simple" style="color: #10b981"></i></div>
+            <div class="stat-value" id="stat-total-value">EGP 0</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-title">LOW STOCK <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b"></i></div>
+            <div class="stat-value" id="stat-low-stock">0</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-title">OUT OF STOCK <i class="fa-solid fa-circle-exclamation text-danger" style="color: var(--color-danger)"></i></div>
+            <div class="stat-value" id="stat-out-stock">0</div>
+        </div>
+    </div>
+
+    <!-- Banner -->
+    <div class="warning-banner card" id="attention-banner" style="display: none;">
+        <div class="banner-content">
+            <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b; font-size: 24px;"></i>
+            <div>
+                <strong><span id="banner-attention-count">0</span> items need attention</strong>
+                <p><span id="banner-out-count">0</span> out of stock, <span id="banner-low-count">0</span> below minimum level</p>
+            </div>
+        </div>
+        <button class="button warning">Generate Purchase Order</button>
+    </div>
+
+    <!-- Filters and Toolbar -->
+    <div class="inventory-toolbar">
+        <div class="search-field">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="inventory-search" placeholder="Search by name, SKU, or ID..." />
+        </div>
+        <div class="toolbar-filters">
+            <select id="category-filter" class="filter-input">
+                <option value="All">All Categories</option>
+                <option value="Engine Parts">Engine Parts</option>
+                <option value="Brakes">Brakes</option>
+                <option value="Tires">Tires</option>
+                <option value="Filters">Filters</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Fluids & Oils">Fluids & Oils</option>
+                <option value="Transmission">Transmission</option>
+                <option value="Suspension">Suspension</option>
+                <option value="Body Parts">Body Parts</option>
+                <option value="Tools">Tools</option>
+            </select>
+            <div class="filter-pills" id="status-filters">
+                <button class="pill active" data-status="All">All</button>
+                <button class="pill" data-status="In Stock">In Stock</button>
+                <button class="pill" data-status="Low Stock">Low Stock</button>
+                <button class="pill" data-status="Out of Stock">Out of Stock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card table-wrapper">
+        <table class="inventory-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>SKU</th>
+                    <th>Category</th>
+                    <th>Qty</th>
+                    <th>Min</th>
+                    <th>Status</th>
+                    <th>Stock Level</th>
+                    <th>Unit Price</th>
+                    <th>Total Value</th>
+                    <th>Location</th>
+                    <th>Supplier</th>
+                    <th>Last Restocked</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="inventory-table-body">
+                <!-- Data injected here -->
+            </tbody>
+        </table>
+        <div id="inventory-empty-state" class="empty-state" style="display: none;">
+            <p>No parts found matching your criteria.</p>
+        </div>
+    </div>
+
+    <!-- Item Details Modal -->
+    <div class="modal-overlay" id="item-modal">
+        <div class="modal-content" id="item-modal-content">
+            <!-- Modal inner injected dynamically -->
+        </div>
+    </div>
+
+    <!-- Add/Edit Part Modal (Simple Form) -->
+    <div class="modal-overlay" id="form-modal">
+        <div class="modal-content form-modal-content">
+            <div class="modal-header">
+                <h3 id="form-modal-title">Add Part</h3>
+                <button class="close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="part-form" class="stack">
+                <input type="hidden" id="form-id" />
+                <div class="grid">
+                    <div>
+                        <label class="label">Name</label>
+                        <input type="text" id="form-name" required />
+                    </div>
+                    <div>
+                        <label class="label">SKU</label>
+                        <input type="text" id="form-sku" required />
+                    </div>
+                </div>
+                <div class="grid">
+                    <div>
+                        <label class="label">Category</label>
+                        <select id="form-category" required>
+                            <option value="Engine Parts">Engine Parts</option>
+                            <option value="Brakes">Brakes</option>
+                            <option value="Tires">Tires</option>
+                            <option value="Filters">Filters</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Fluids & Oils">Fluids & Oils</option>
+                            <option value="Transmission">Transmission</option>
+                            <option value="Suspension">Suspension</option>
+                            <option value="Body Parts">Body Parts</option>
+                            <option value="Tools">Tools</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">Location</label>
+                        <input type="text" id="form-location" required />
+                    </div>
+                </div>
+                <div class="grid">
+                    <div>
+                        <label class="label">Quantity</label>
+                        <input type="number" id="form-qty" min="0" required />
+                    </div>
+                    <div>
+                        <label class="label">Min Threshold</label>
+                        <input type="number" id="form-min" min="0" required />
+                    </div>
+                    <div>
+                        <label class="label">Max Level</label>
+                        <input type="number" id="form-max" min="1" required />
+                    </div>
+                </div>
+                <div class="grid">
+                    <div>
+                        <label class="label">Unit Price (EGP)</label>
+                        <input type="number" id="form-price" min="0" step="0.01" required />
+                    </div>
+                    <div>
+                        <label class="label">Supplier</label>
+                        <input type="text" id="form-supplier" required />
+                    </div>
+                </div>
+                <div class="modal-footer" style="margin-top: 16px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="button outlined close-modal-btn">Cancel</button>
+                    <button type="submit" class="button primary">Save Part</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
