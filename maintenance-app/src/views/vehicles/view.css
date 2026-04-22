@@ -1,4 +1,4 @@
-﻿.vehicle-page {
+.vehicle-page {
     margin: 10px;
 }
 
@@ -29,6 +29,7 @@
     border-radius: 20px ;
     padding : 20px ;
     background-color: var(--color-surface);
+    margin-bottom: 20px;
 
 }
 .vehicle-page-filter {
@@ -53,4 +54,33 @@
     background-color: var(--color-surface);
     flex: 1;
     min-width: 10%;
+    font-size: var(--font-size-sm);
+}
+
+.vehicle-page-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.vehicle-page-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-border);
+    white-space: nowrap;
+    color: var(--color-text-muted);
+}
+
+.vehicle-page-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-surface-strong);
+}
+
+.vehicle-page-table-body {
+    border: 2px solid var(--color-border);
+    border-radius: 20px ;
+    padding : 20px ;
+    gap: 20px;
+    background-color: var(--color-surface);
 }

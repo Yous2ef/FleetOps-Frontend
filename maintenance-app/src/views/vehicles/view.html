@@ -10,8 +10,18 @@
                     <div class="vehicle-page-filter">
                         <input type="text" id="vehicle-page-filter-search" class="vehicle-page-filter-input"
                             placeholder="Search by name or license plate...">
-                        <select class="vehicle-page-filter-dropdown">All STATUS</select>
-                        <select class="vehicle-page-filter-dropdown">ALL TYPES</select>
+                        <select class="vehicle-page-filter-dropdown">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        <select class="vehicle-page-filter-dropdown">
+                            <option value="">All Types</option>
+                            <option value="truck">Truck</option>
+                            <option value="van">Van</option>
+                            <option value="car">Car</option>
+                        </select>
                     </div>
                 </div>
             </div>
