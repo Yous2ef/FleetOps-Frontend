@@ -1,8 +1,143 @@
-<section class="view-page app-section analytics-page stack">
-    <section class="card stack">
-        <h1 class="heading-lg">Analytics</h1>
-        <p>This module is ready for implementation.</p>
-        <p class="helper-text">Use this section to build the analytics workflow.</p>
-    </section>
-</section>
+<section class="view-page analytics-page">
 
+  <!-- ── Page Header ── -->
+  <header class="analytics-header">
+    <div class="analytics-header__left">
+      <div class="analytics-header__eyebrow">
+        <i data-lucide="bar-chart-2"></i>
+        <span>Fleet Intelligence</span>
+      </div>
+      <h1 class="analytics-title">Analytics</h1>
+      <p class="analytics-subtitle">Performance overview across all fleet operations</p>
+    </div>
+    <div class="analytics-header__right">
+      <div class="date-filter" id="date-filter">
+        <button class="date-btn is-active" data-range="7d">7 Days</button>
+        <button class="date-btn" data-range="30d">30 Days</button>
+        <button class="date-btn" data-range="90d">Quarter</button>
+        <button class="date-btn" data-range="ytd">YTD</button>
+      </div>
+      <button class="export-btn" id="export-btn">
+        <i data-lucide="download"></i>
+        Export
+      </button>
+    </div>
+  </header>
+
+  <!-- ── KPI Cards ── -->
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <!-- ── Chart Row 1 ── -->
+  <div class="charts-row">
+    <div class="chart-card chart-card--wide">
+      <div class="chart-card__header">
+        <div>
+          <h2 class="chart-card__title">Revenue vs. Operating Costs</h2>
+          <p class="chart-card__subtitle">Monthly financial performance</p>
+        </div>
+        <div class="chart-legend" id="rev-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#0f988e"></span>Revenue</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#e55c3a"></span>Costs</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>Net Profit</span>
+        </div>
+      </div>
+      <div class="chart-area">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card chart-card--narrow">
+      <div class="chart-card__header">
+        <div>
+          <h2 class="chart-card__title">Fleet Status</h2>
+          <p class="chart-card__subtitle">Current vehicle distribution</p>
+        </div>
+      </div>
+      <div class="chart-area chart-area--doughnut">
+        <canvas id="fleetStatusChart"></canvas>
+        <div class="doughnut-center" id="doughnut-center">
+          <span class="doughnut-value">86</span>
+          <span class="doughnut-label">Vehicles</span>
+        </div>
+      </div>
+      <div class="fleet-status-legend" id="fleet-legend"></div>
+    </div>
+  </div>
+
+  <!-- ── Chart Row 2 ── -->
+  <div class="charts-row">
+    <div class="chart-card chart-card--narrow">
+      <div class="chart-card__header">
+        <div>
+          <h2 class="chart-card__title">Driver Performance</h2>
+          <p class="chart-card__subtitle">Top 5 drivers this period</p>
+        </div>
+      </div>
+      <div class="chart-area">
+        <canvas id="driverChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card chart-card--wide">
+      <div class="chart-card__header">
+        <div>
+          <h2 class="chart-card__title">Daily Distance & Fuel</h2>
+          <p class="chart-card__subtitle">Km covered vs. fuel consumed (last 14 days)</p>
+        </div>
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#0f988e"></span>Distance (km)</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Fuel (L)</span>
+        </div>
+      </div>
+      <div class="chart-area">
+        <canvas id="distanceFuelChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Data Table ── -->
+  <div class="table-card">
+    <div class="table-card__header">
+      <div>
+        <h2 class="chart-card__title">Analytics Reports</h2>
+        <p class="chart-card__subtitle">Detailed vehicle & driver performance logs</p>
+      </div>
+      <div class="table-controls">
+        <div class="search-field table-search">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" id="table-search-input" placeholder="Search vehicle, driver…" />
+        </div>
+        <select class="table-filter-select" id="status-filter">
+          <option value="">All Statuses</option>
+          <option value="Optimal">Optimal</option>
+          <option value="High Usage">High Usage</option>
+          <option value="Needs Review">Needs Review</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="analytics-table" id="analytics-table">
+        <thead>
+          <tr>
+            <th class="sortable" data-col="date">Date <i data-lucide="chevrons-up-down"></i></th>
+            <th class="sortable" data-col="vehicle">Vehicle ID <i data-lucide="chevrons-up-down"></i></th>
+            <th>Driver</th>
+            <th class="sortable" data-col="distance">Distance (km) <i data-lucide="chevrons-up-down"></i></th>
+            <th class="sortable" data-col="fuel">Fuel (L) <i data-lucide="chevrons-up-down"></i></th>
+            <th>Idle Time</th>
+            <th>Efficiency</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="analytics-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="table-footer">
+      <span class="table-footer__info" id="table-info">Showing 1–10 of 48 records</span>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+</section>
