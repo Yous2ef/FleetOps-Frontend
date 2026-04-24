@@ -82,6 +82,27 @@ export async function startStaticServer({
                 return;
             }
 
+            if (normalizedPath.startsWith("/node_modules/")) {
+                const nodeModulePath = path.resolve(
+                    path.join(projectRoot, `.${normalizedPath}`),
+                );
+
+                if (!isInsideRoot(projectRoot, nodeModulePath)) {
+                    writeText(response, 403, "Forbidden");
+                    return;
+                }
+
+                const content = await fs.readFile(nodeModulePath);
+                const ext = path.extname(nodeModulePath).toLowerCase();
+                response.writeHead(200, {
+                    "Content-Type":
+                        mimeTypes.get(ext) ?? "application/octet-stream",
+                    "Cache-Control": "no-store",
+                });
+                response.end(content);
+                return;
+            }
+
             const filePath = path.resolve(
                 path.join(resolvedRoot, `.${cleanPath}`),
             );

@@ -1,8 +1,74 @@
-<section class="view-page app-section route-planning-page stack">
-    <section class="card stack">
-        <h1 class="heading-lg">Route Planning</h1>
-        <p>This module is ready for implementation.</p>
-        <p class="helper-text">Use this section to build the route planning workflow.</p>
-    </section>
-</section>
+<div class="view-page route-planning-page">
+    <!-- Header -->
+    <div class="rp-header">
+        <div class="rp-header__left">
+            <h2 class="rp-title">Route Planning & Dispatch</h2>
+            <p class="rp-subtitle">
+                Build and dispatch optimized delivery routes
+            </p>
+        </div>
+        <div class="rp-header__right">
+            <button
+                type="button"
+                class="button outlined"
+                id="emergency-insert-btn">
+                <i data-lucide="zap"></i>
+                Emergency Insert
+            </button>
+        </div>
+    </div>
 
+    <!-- Stepper -->
+    <div class="rp-stepper" id="stepper-container">
+        <!-- Will be populated by JS -->
+    </div>
+
+    <!-- Content Area -->
+    <div class="rp-content" id="step-content">
+        <!-- Step content will be rendered here -->
+    </div>
+
+    <!-- Navigation -->
+    <div class="rp-navigation">
+        <button type="button" class="button outlined" id="prev-btn" disabled>
+            <i data-lucide="chevron-left"></i>
+            Previous
+        </button>
+        <div class="rp-step-indicator">
+            Step <span id="current-step-num">1</span> of 9
+        </div>
+        <button type="button" class="button primary" id="next-btn">
+            Next Step
+            <i data-lucide="chevron-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Emergency Insert Modal -->
+<div class="modal-overlay" id="emergency-modal" style="display: none">
+    <div class="modal-content rp-emergency-modal">
+        <div class="modal-header">
+            <div class="modal-header__left">
+                <div class="modal-icon">
+                    <i data-lucide="zap"></i>
+                </div>
+                <div>
+                    <h3>Emergency Express Insert</h3>
+                    <p class="modal-subtitle">
+                        Insert a high-priority order into an active route
+                        immediately
+                    </p>
+                </div>
+            </div>
+            <button
+                type="button"
+                class="modal-close"
+                id="emergency-modal-close">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="emergency-modal-body">
+            <!-- Will be populated by JS -->
+        </div>
+    </div>
+</div>
