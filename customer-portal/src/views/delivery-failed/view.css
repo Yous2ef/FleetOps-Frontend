@@ -1,0 +1,284 @@
+/* ════════════════════════════════════════════════════════════
+   delivery-failed / view.css — Mobile-First
+   ════════════════════════════════════════════════════════════ */
+
+.df-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  animation: view-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Banner ─────────────────────────────────────────────────── */
+.df-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background-color: color-mix(in srgb, var(--status-danger) 7%, var(--bg-surface));
+  border: 1px solid color-mix(in srgb, var(--status-danger) 22%, var(--border-subtle));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.df-banner__icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--status-danger) 10%, var(--bg-surface));
+  border: 1.5px solid color-mix(in srgb, var(--status-danger) 25%, var(--border-subtle));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--status-danger);
+}
+
+.df-banner__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.df-banner__title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.df-banner__meta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* ── Cards ────────────────────────────────────────────────────── */
+.df-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+}
+
+.df-section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-secondary);
+}
+
+.df-section-label--success { color: var(--status-success); }
+
+.df-card__heading {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.df-card__body {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ── Chips ────────────────────────────────────────────────────── */
+.df-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.df-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.df-chip--danger {
+  background-color: color-mix(in srgb, var(--status-danger) 8%, var(--bg-surface));
+  color: var(--status-danger);
+  border: 1px solid color-mix(in srgb, var(--status-danger) 18%, var(--border-subtle));
+}
+
+/* ── Timeline Card ────────────────────────────────────────────── */
+.df-timeline-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+}
+
+.df-timeline { display: flex; flex-direction: column; }
+
+.df-tl-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  position: relative;
+  padding-bottom: 26px;
+}
+
+.df-tl-item:last-child { padding-bottom: 0; }
+
+.df-tl-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 28px;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--border-subtle);
+}
+
+.df-tl-link--success::after { background-color: var(--status-success) !important; }
+.df-tl-link--danger::after  { background-color: var(--status-danger) !important; }
+
+.df-tl-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-inverse);
+  position: relative;
+  z-index: 1;
+}
+
+.df-tl-dot--success { background-color: var(--status-success); }
+.df-tl-dot--danger  { background-color: var(--status-danger); }
+
+.df-tl-body {
+  padding-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.df-tl-body strong { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); }
+.df-tl-title--danger { color: var(--status-danger) !important; }
+.df-tl-body span { font-size: 0.775rem; color: var(--text-secondary); line-height: 1.4; }
+
+/* ── Map Card ─────────────────────────────────────────────────── */
+.df-map-card {
+  border-radius: var(--radius-lg);
+  min-height: 200px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-subtle);
+}
+
+.df-map-bg {
+  position: absolute;
+  inset: 0;
+  background-color: color-mix(in srgb, var(--accent-primary) 9%, var(--bg-hover));
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, var(--border-subtle) 39px, var(--border-subtle) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, var(--border-subtle) 39px, var(--border-subtle) 40px);
+}
+
+.df-map-road-h {
+  position: absolute;
+  left: 0; right: 0;
+  top: 42%;
+  height: 10px;
+  background-color: color-mix(in srgb, var(--accent-primary) 18%, var(--bg-surface));
+  z-index: 1;
+}
+
+.df-map-road-v {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 38%;
+  width: 10px;
+  background-color: color-mix(in srgb, var(--accent-primary) 18%, var(--bg-surface));
+  z-index: 1;
+}
+
+.df-map-pin {
+  position: absolute;
+  top: 50%;
+  left: 56%;
+  transform: translate(-50%, -100%);
+  color: var(--status-danger);
+  z-index: 3;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+}
+
+.df-map-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, color-mix(in srgb, var(--accent-primary) 28%, transparent), transparent 65%);
+  z-index: 2;
+}
+
+.df-map-chip {
+  position: relative;
+  z-index: 4;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  box-shadow: var(--shadow-card);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.df-map-chip svg { color: var(--status-danger); flex-shrink: 0; }
+
+/* ── Support Box ──────────────────────────────────────────────── */
+.df-support-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  background-color: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+
+.df-support-info { display: flex; flex-direction: column; gap: 2px; }
+
+.df-support-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.df-support-phone {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.df-call-btn { gap: 7px; }
+
+/* ── Action Bar ───────────────────────────────────────────────── */
+.df-action-bar { display: flex; flex-direction: column; gap: 10px; }
+.df-action-primary { gap: 8px; width: 100%; justify-content: center; }
+.df-action-bar .btn--outlined { width: 100%; justify-content: center; gap: 8px; }

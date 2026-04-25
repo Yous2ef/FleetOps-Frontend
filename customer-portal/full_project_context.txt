@@ -1,0 +1,1270 @@
+
+==================================================
+FILE: ./index.html
+==================================================
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Customer Portal</title>
+        <link rel="icon" href="data:," />
+        <link rel="stylesheet" href="./src/styles/main.css" />
+    </head>
+    <body>
+        <nav class="navbar" aria-label="Main navigation">
+            <div class="navbar__brand">Customer Portal</div>
+            <div class="navbar__links">
+                <a class="navbar__link" href="/" data-link data-route="/"
+                    >Main Page</a
+                >
+                <a
+                    class="navbar__link"
+                    href="/page-one"
+                    data-link
+                    data-route="/page-one"
+                    >Page One</a
+                >
+                <a
+                    class="navbar__link"
+                    href="/preview-page"
+                    data-link
+                    data-route="/preview-page"
+                    >Template Page</a
+                >
+            </div>
+        </nav>
+
+        <main id="app-content" class="app-content" aria-live="polite"></main>
+
+        <footer class="footer">
+            <p>&copy; 2024 Fleet Tracking Platform. All rights reserved.</p>
+        </footer>
+
+        <script type="module" src="./src/main.js"></script>
+    </body>
+</html>
+
+
+==================================================
+FILE: ./src/main.js
+==================================================
+
+import { initRouter } from "./router/router.js";
+
+initRouter({ outletId: "app-content" });
+
+
+==================================================
+FILE: ./src/router/router.js
+==================================================
+
+import { normalizePath, notFoundRoute, routes } from "./routes.js";
+
+export function initRouter({ outletId }) {
+    const outlet = document.getElementById(outletId);
+    let currentRouteModule = null;
+    let currentRouteStylesheet = null;
+
+    if (!outlet) {
+        throw new Error(`Router outlet #${outletId} was not found.`);
+    }
+
+    async function renderCurrentRoute() {
+        const currentPath = normalizePath(window.location.pathname);
+        const activeRoute =
+            routes.find((route) => route.path === currentPath) ?? notFoundRoute;
+
+        if (currentRouteModule?.unmount) {
+            currentRouteModule.unmount(outlet);
+        }
+
+        const htmlResponse = await fetch(activeRoute.view.html);
+        if (!htmlResponse.ok) {
+            throw new Error(
+                `Failed to load HTML view: ${activeRoute.view.html}`,
+            );
+        }
+
+        const html = await htmlResponse.text();
+
+        if (currentRouteStylesheet) {
+            currentRouteStylesheet.remove();
+        }
+
+        const stylesheet = document.createElement("link");
+        stylesheet.rel = "stylesheet";
+        stylesheet.href = activeRoute.view.css;
+        stylesheet.dataset.routeStyle = activeRoute.path;
+        document.head.appendChild(stylesheet);
+
+        currentRouteStylesheet = stylesheet;
+        document.title = activeRoute.title;
+        outlet.innerHTML = html;
+
+        const routeModule = await import(activeRoute.view.js);
+        currentRouteModule = routeModule;
+
+        if (routeModule.mount) {
+            routeModule.mount(outlet);
+        }
+
+        setActiveLink(activeRoute.path);
+
+        window.dispatchEvent(
+            new CustomEvent("route:changed", {
+                detail: { path: activeRoute.path },
+            }),
+        );
+    }
+
+    function navigateTo(path) {
+        const targetPath = normalizePath(path);
+        const currentPath = normalizePath(window.location.pathname);
+
+        if (targetPath === currentPath) {
+            return;
+        }
+
+        window.history.pushState({}, "", targetPath);
+        renderCurrentRoute().catch(handleRenderError);
+    }
+
+    function handleLinkNavigation(event) {
+        const link = event.target.closest("a[data-link]");
+
+        if (!link) {
+            return;
+        }
+
+        const href = link.getAttribute("href");
+
+        if (!href || href.startsWith("http")) {
+            return;
+        }
+
+        event.preventDefault();
+        navigateTo(href);
+    }
+
+    function setActiveLink(pathname) {
+        const navLinks = document.querySelectorAll(".navbar__link[data-route]");
+
+        navLinks.forEach((link) => {
+            const linkRoute = link.getAttribute("data-route");
+            link.classList.toggle("is-active", linkRoute === pathname);
+        });
+    }
+
+    function handleRenderError(error) {
+        console.error(error);
+        outlet.innerHTML = `
+            <section class="view-page stack">
+                <h1 class="heading-lg">Unexpected Error</h1>
+                <p>Could not render this page. Please retry.</p>
+            </section>
+        `;
+    }
+
+    const handlePopState = () => {
+        renderCurrentRoute().catch(handleRenderError);
+    };
+
+    document.addEventListener("click", handleLinkNavigation);
+    window.addEventListener("popstate", handlePopState);
+
+    renderCurrentRoute().catch(handleRenderError);
+
+    return {
+        navigateTo,
+        destroy() {
+            document.removeEventListener("click", handleLinkNavigation);
+            window.removeEventListener("popstate", handlePopState);
+
+            if (currentRouteModule?.unmount) {
+                currentRouteModule.unmount(outlet);
+            }
+
+            if (currentRouteStylesheet) {
+                currentRouteStylesheet.remove();
+            }
+        },
+    };
+}
+
+
+==================================================
+FILE: ./src/router/routes.js
+==================================================
+
+export const routes = [
+    {
+        path: "/",
+        title: "Customer Portal | Home",
+        view: {
+            html: "/src/views/home/view.html",
+            css: "/src/views/home/view.css",
+            js: "/src/views/home/view.js",
+        },
+    },
+    {
+        path: "/page-one",
+        title: "Customer Portal | Page One",
+        view: {
+            html: "/src/views/page-one/view.html",
+            css: "/src/views/page-one/view.css",
+            js: "/src/views/page-one/view.js",
+        },
+    },
+    {
+        path: "/preview-page",
+        title: "Customer Portal | Template Page",
+        view: {
+            html: "/src/views/preview-page/view.html",
+            css: "/src/views/preview-page/view.css",
+            js: "/src/views/preview-page/view.js",
+        },
+    },
+];
+
+export const notFoundRoute = {
+    path: "/404",
+    title: "Customer Portal | Not Found",
+    view: {
+        html: "/src/views/not-found/view.html",
+        css: "/src/views/not-found/view.css",
+        js: "/src/views/not-found/view.js",
+    },
+};
+
+export function normalizePath(pathname) {
+    if (!pathname || pathname === "/index.html") {
+        return "/";
+    }
+
+    const trimmed =
+        pathname.endsWith("/") && pathname.length > 1
+            ? pathname.slice(0, -1)
+            : pathname;
+
+    return trimmed;
+}
+
+
+==================================================
+FILE: ./src/services/api/users.js
+==================================================
+
+import api from "/shared/api-handler.js";
+import {usersMockData} from "../storage/users.js";
+
+// ─── Global Setup ─────────────────────────────────────────────────────────────
+
+api.setBaseURL("http://localhost:3000");
+
+// ─── API Methods ─────────────────────────────────────────────────────────────
+function getAllUsersMockData() {
+    return [...usersMockData];
+}
+
+function getUserByIdMockData(userId) {
+    return usersMockData.find((user) => user.id === userId) || null;
+}
+
+function getUsersByStatusMockData(status) {
+    return usersMockData.filter((user) => user.status === status);
+}
+
+const UsersStorage = {
+    getAllUsersMockData,
+    getUserByIdMockData,
+    getUsersByStatusMockData,
+};
+
+export { usersMockData };
+export default UsersStorage;
+
+
+==================================================
+FILE: ./src/services/storage/users.js
+==================================================
+
+const usersMockData = [
+    {
+        id: "USR-1001",
+        fullName: "Ahmed Hassan",
+        email: "ahmed.hassan@example.com",
+        phone: "+201001112233",
+        role: "customer",
+        status: "active",
+        city: "Cairo",
+        lastLoginAt: "2026-04-14T10:25:00Z",
+        createdAt: "2025-11-10T08:00:00Z",
+    },
+    {
+        id: "USR-1002",
+        fullName: "Mona Ali",
+        email: "mona.ali@example.com",
+        phone: "+201005556677",
+        role: "customer",
+        status: "active",
+        city: "Alexandria",
+        lastLoginAt: "2026-04-13T17:40:00Z",
+        createdAt: "2025-12-01T09:30:00Z",
+    },
+    {
+        id: "USR-1003",
+        fullName: "Youssef Adel",
+        email: "youssef.adel@example.com",
+        phone: "+201010203040",
+        role: "dispatcher",
+        status: "inactive",
+        city: "Giza",
+        lastLoginAt: "2026-03-20T11:15:00Z",
+        createdAt: "2025-09-15T12:10:00Z",
+    },
+    {
+        id: "USR-1004",
+        fullName: "Nour Emad",
+        email: "nour.emad@example.com",
+        phone: "+201022334455",
+        role: "supervisor",
+        status: "active",
+        city: "Mansoura",
+        lastLoginAt: "2026-04-15T07:05:00Z",
+        createdAt: "2025-10-05T15:20:00Z",
+    },
+    {
+        id: "USR-1005",
+        fullName: "Karim Mostafa",
+        email: "karim.mostafa@example.com",
+        phone: "+201033445566",
+        role: "customer",
+        status: "suspended",
+        city: "Tanta",
+        lastLoginAt: "2026-02-28T19:00:00Z",
+        createdAt: "2025-08-22T10:45:00Z",
+    },
+];
+
+
+export { usersMockData };
+
+
+==================================================
+FILE: ./src/styles/main.css
+==================================================
+
+/* ===================== */
+/*      DESIGN TOKENS    */
+/* ===================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap");
+
+:root {
+    /* Atmospheric Precision palette */
+    --color-primary: #00b983;
+    --color-primary-dim: #00573b;
+    --color-primary-hover: #2a5245;
+    --color-secondary: #555f6d;
+    --color-secondary-hover: #495361;
+    --color-secondary-container: #ccefe1;
+    --color-on-secondary-container: #08392a;
+    --color-tertiary: #d2e4ff;
+    --color-tertiary-hover: #bfd7fb;
+    --color-danger: #9b2f2f;
+    --color-danger-hover: #812727;
+
+    --color-page-bg: #f8f9ff;
+    --color-surface: #ffffff;
+    --color-surface-low: #eef4ff;
+    --color-surface-highest: #d2e4ff;
+    --color-surface-strong: #d2e4ff;
+    --color-white: #ffffff;
+    --color-black: #000000;
+
+    --color-text-title: #0e3457;
+    --color-text-body: #2e4a63;
+    --color-text-muted: #617d99;
+    --color-border: rgba(148, 180, 222, 0.15);
+    --color-outline: #94b4de;
+
+    --color-cta-text: #ffffff;
+    --color-navbar-bg: var(--color-primary);
+    --color-navbar-link-hover: rgba(255, 255, 255, 0.16);
+    --color-input-bg: rgba(255, 255, 255, 0.86);
+    --color-knob-shadow: rgba(14, 52, 87, 0.22);
+    --color-focus-ring: rgba(85, 95, 109, 0.24);
+    --color-tone-start: rgba(0, 0, 0, 0.8);
+    --color-tone-end: rgba(255, 255, 255, 0.9);
+    --color-switch-track: #bfd0e6;
+    --color-placeholder: #6f8aa6;
+    --color-search-icon: #6a86a2;
+    --color-chip-success-bg: var(--color-secondary-container);
+    --color-chip-success-text: var(--color-on-secondary-container);
+    --color-chip-neutral-bg: var(--color-surface-highest);
+    --color-chip-neutral-text: var(--color-text-title);
+    --color-palette-primary-text: #ffffff;
+    --color-palette-secondary-text: #f2fbf7;
+    --color-palette-tertiary-text: #12385a;
+    --color-palette-neutral-text: #f4f9ff;
+
+    --font-family-display: "Manrope", "Segoe UI", sans-serif;
+    --font-family-body:
+        "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    --font-family: var(--font-family-body);
+    --font-size-xs: 12px;
+    --font-size-sm: 14px;
+    --font-size-base: 16px;
+    --font-size-lg: 20px;
+    --font-size-xl: 28px;
+    --line-height: 1.5;
+
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 22px;
+    --shadow-sm: 0 12px 24px rgba(14, 52, 87, 0.06);
+    --shadow-md: 0 16px 32px rgba(14, 52, 87, 0.08);
+    --shadow-floating: 0 24px 38px rgba(14, 52, 87, 0.06);
+}
+
+/* ===================== */
+/*      BASE STYLES      */
+/* ===================== */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    color: var(--color-text-body);
+    background: var(--color-page-bg);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-family-display);
+    color: var(--color-text-title);
+    margin: 0;
+    line-height: 1.15;
+}
+
+.heading-xl {
+    font-size: clamp(30px, 3vw, 44px);
+    font-weight: 750;
+    letter-spacing: -0.02em;
+}
+
+.heading-lg {
+    font-size: clamp(24px, 2.4vw, 34px);
+    font-weight: 700;
+}
+
+.heading-md {
+    font-size: clamp(20px, 2vw, 26px);
+    font-weight: 650;
+}
+
+.label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-body);
+}
+
+.helper-text {
+    margin-top: 6px;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* ===================== */
+/*       COMPONENTS      */
+/* ===================== */
+
+.card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.button:hover {
+    transform: translateY(-1px);
+}
+
+.button:active {
+    transform: translateY(0);
+}
+
+.button.primary {
+    background: linear-gradient(
+        130deg,
+        var(--color-primary),
+        var(--color-primary-dim)
+    );
+    color: var(--color-cta-text);
+}
+
+.button.primary:hover {
+    background: linear-gradient(
+        130deg,
+        var(--color-primary-dim),
+        var(--color-primary)
+    );
+}
+
+.button.secondary {
+    background-color: var(--color-secondary-container);
+    color: var(--color-on-secondary-container);
+}
+
+.button.secondary:hover {
+    background-color: var(--color-tertiary);
+    color: var(--color-text-title);
+}
+
+.button.inverted {
+    background-color: var(--color-secondary);
+    color: var(--color-cta-text);
+}
+
+.button.inverted:hover {
+    background-color: var(--color-secondary-hover);
+}
+
+.button.outlined {
+    background-color: transparent;
+    border-color: var(--color-border);
+    color: var(--color-text-body);
+}
+
+.button.outlined:hover {
+    background-color: var(--color-surface-low);
+    border-color: var(--color-primary);
+}
+
+.icon-button {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 999px;
+    display: inline-grid;
+    place-items: center;
+    font-size: 18px;
+    color: var(--color-white);
+    cursor: pointer;
+}
+
+.icon-button.primary {
+    background: var(--color-primary);
+}
+
+.icon-button.secondary {
+    background: var(--color-secondary);
+}
+
+.icon-button.danger {
+    background: var(--color-danger);
+}
+
+.icon-button.primary:hover,
+.icon-button.secondary:hover,
+.icon-button.danger:hover {
+    filter: brightness(0.95);
+}
+
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.switch {
+    position: relative;
+    display: inline-flex;
+    width: 54px;
+    height: 32px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: var(--color-switch-track);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.slider::before {
+    content: "";
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    left: 3px;
+    top: 3px;
+    border-radius: 999px;
+    background: var(--color-white);
+    box-shadow: 0 3px 7px var(--color-knob-shadow);
+    transition: 0.2s ease;
+}
+
+.switch input:checked + .slider {
+    background: var(--color-primary);
+}
+
+.switch input:checked + .slider::before {
+    transform: translateX(22px);
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-input-bg);
+    color: var(--color-text-title);
+    font-size: var(--font-size-base);
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--color-white);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+::placeholder {
+    color: var(--color-placeholder);
+}
+
+.search-field {
+    position: relative;
+}
+
+.search-field input {
+    padding-left: 42px;
+}
+
+.search-field .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-search-icon);
+    font-size: 16px;
+    pointer-events: none;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.chip.success {
+    background: var(--color-chip-success-bg);
+    color: var(--color-chip-success-text);
+}
+
+.chip.neutral {
+    background: var(--color-chip-neutral-bg);
+    color: var(--color-chip-neutral-text);
+}
+
+/* ===================== */
+/*     LAYOUT HELPERS    */
+/* ===================== */
+
+.grid {
+    display: grid;
+    gap: 16px;
+}
+
+.grid.tokens {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.grid.main {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.grid.compact {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.stack {
+    display: grid;
+    gap: 12px;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.color-swatch {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+}
+
+.color-swatch .top {
+    height: 64px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+}
+
+.color-swatch .tones {
+    height: 24px;
+    background: linear-gradient(
+        to right,
+        var(--color-tone-start),
+        var(--color-tone-end)
+    );
+}
+
+.palette-primary {
+    background: var(--color-primary);
+    color: var(--color-palette-primary-text);
+}
+
+.palette-secondary {
+    background: var(--color-secondary);
+    color: var(--color-palette-secondary-text);
+}
+
+.palette-tertiary {
+    background: var(--color-tertiary);
+    color: var(--color-palette-tertiary-text);
+}
+
+.palette-neutral {
+    background: var(--color-black);
+    color: var(--color-palette-neutral-text);
+}
+
+.navbar {
+    background: linear-gradient(
+        130deg,
+        var(--color-primary),
+        var(--color-primary-dim)
+    );
+    color: var(--color-cta-text);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+}
+
+.navbar__brand {
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.navbar__links {
+    display: flex;
+    gap: 10px;
+}
+
+.navbar__link {
+    color: var(--color-cta-text);
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.navbar__link:hover {
+    background-color: var(--color-navbar-link-hover);
+}
+
+.navbar__link.is-active {
+    background-color: var(--color-secondary-container);
+    color: var(--color-on-secondary-container);
+}
+
+.footer {
+    background: linear-gradient(
+        130deg,
+        var(--color-primary),
+        var(--color-primary-dim)
+    );
+    color: var(--color-cta-text);
+    text-align: center;
+    padding: 20px;
+    margin-top: 50px;
+}
+
+@media (max-width: 680px) {
+    .button {
+        width: 100%;
+    }
+
+    .button-group {
+        width: 100%;
+    }
+
+    .icon-button {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+.app-content {
+    max-width: 980px;
+    margin: 24px auto;
+    padding: 0 16px;
+}
+
+.page {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+
+==================================================
+FILE: ./src/views/home/view.css
+==================================================
+
+.home-page {
+    background: linear-gradient(
+        140deg,
+        var(--color-surface),
+        var(--color-surface-low)
+    );
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+
+==================================================
+FILE: ./src/views/home/view.html
+==================================================
+
+<section class="view-page home-page stack">
+    <h1 class="heading-lg">Customer Portal</h1>
+    <p>Public tracking portal served by the shared orchestrator.</p>
+    <p>Navigate using the top menu. Content swaps without full page reload.</p>
+    <button id="home-action" class="button primary" type="button">
+        Run Api Test
+    </button>
+    <p id="home-message" class="helper-text"></p>
+</section>
+
+
+==================================================
+FILE: ./src/views/home/view.js
+==================================================
+
+// API handler usage example
+import UsersStorage from "../../services/api/users.js";
+
+let clickHandler;
+
+export function mount(rootElement) {
+    const button = rootElement.querySelector("#home-action");
+    const message = rootElement.querySelector("#home-message");
+
+    if (!button || !message) {
+        return;
+    }
+
+    clickHandler = () => {
+        message.textContent = `Api test run at ${new Date().toLocaleTimeString()}.
+        All users: ${JSON.stringify(UsersStorage.getAllUsersMockData())}
+        User by ID (USR-1002): ${JSON.stringify(UsersStorage.getUserByIdMockData("USR-1002"))}
+        Users by Status (active): ${JSON.stringify(UsersStorage.getUsersByStatusMockData("active"))}`;
+    };
+
+    button.addEventListener("click", clickHandler);
+}
+
+export function unmount(rootElement) {
+    const button = rootElement.querySelector("#home-action");
+
+    if (button && clickHandler) {
+        button.removeEventListener("click", clickHandler);
+    }
+
+    clickHandler = null;
+}
+
+
+==================================================
+FILE: ./src/views/not-found/view.css
+==================================================
+
+.not-found-page {
+    background: var(--color-surface-low);
+    border: 1px dashed var(--color-outline);
+    border-radius: 18px;
+    padding: 24px;
+}
+
+
+==================================================
+FILE: ./src/views/not-found/view.html
+==================================================
+
+<section class="view-page not-found-page stack">
+    <h1 class="heading-lg">404</h1>
+    <p>The requested route does not exist.</p>
+    <a class="button outlined" href="/" data-link>Back To Home</a>
+</section>
+
+
+==================================================
+FILE: ./src/views/not-found/view.js
+==================================================
+
+export function mount() {
+    // No specific behavior is needed for this page.
+}
+
+export function unmount() {
+    // Nothing to clean up.
+}
+
+
+==================================================
+FILE: ./src/views/page-one/view.css
+==================================================
+
+.page-one {
+    background: linear-gradient(
+        140deg,
+        var(--color-surface),
+        var(--color-surface-highest)
+    );
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    padding: 24px;
+}
+
+
+==================================================
+FILE: ./src/views/page-one/view.html
+==================================================
+
+<section class="view-page page-one stack">
+    <h1 class="heading-lg">Page One</h1>
+    <p>This page is loaded from its own HTML source file.</p>
+    <p id="page-one-counter-label">Counter: 0</p>
+    <button id="page-one-increase" class="button secondary" type="button">
+        Increase Counter
+    </button>
+</section>
+
+
+==================================================
+FILE: ./src/views/page-one/view.js
+==================================================
+
+let clickHandler;
+let counter = 0;
+
+export function mount(rootElement) {
+    const button = rootElement.querySelector("#page-one-increase");
+    const label = rootElement.querySelector("#page-one-counter-label");
+
+    if (!button || !label) {
+        return;
+    }
+
+    counter = 0;
+    label.textContent = `Counter: ${counter}`;
+
+    clickHandler = () => {
+        counter += 1;
+        label.textContent = `Counter: ${counter}`;
+    };
+
+    button.addEventListener("click", clickHandler);
+}
+
+export function unmount(rootElement) {
+    const button = rootElement.querySelector("#page-one-increase");
+
+    if (button && clickHandler) {
+        button.removeEventListener("click", clickHandler);
+    }
+
+    clickHandler = null;
+}
+
+
+==================================================
+FILE: ./src/views/preview-page/view.css
+==================================================
+
+.preview-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    gap: 18px;
+}
+
+.preview-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.field-width {
+    max-width: 460px;
+}
+
+
+==================================================
+FILE: ./src/views/preview-page/view.html
+==================================================
+
+<section class="view-page preview-page">
+    <section class="card stack">
+        <div class="preview-title">
+            <h1 class="heading-lg">Core UI Components</h1>
+            <span class="chip success">Main System</span>
+        </div>
+        <p>
+            Minimal reusable building blocks based on your attached design
+            direction.
+        </p>
+    </section>
+
+    <section class="grid tokens">
+        <article class="color-swatch">
+            <div class="top palette-primary">
+                <span>Primary</span>
+                <span>#00b984</span>
+            </div>
+            <div class="tones"></div>
+        </article>
+        <article class="color-swatch">
+            <div class="top palette-secondary">
+                <span>Secondary</span>
+                <span>#565e6d</span>
+            </div>
+            <div class="tones"></div>
+        </article>
+        <article class="color-swatch">
+            <div class="top palette-tertiary">
+                <span>Tertiary</span>
+                <span>#d3e3ff</span>
+            </div>
+            <div class="tones"></div>
+        </article>
+    </section>
+
+    <section class="grid main">
+        <article class="card stack">
+            <h2 class="heading-md">Typography</h2>
+            <h1 class="heading-xl">Heading XL</h1>
+            <h2 class="heading-lg">Heading LG</h2>
+            <h3 class="heading-md">Heading MD</h3>
+            <label class="label">Main Label</label>
+            <p>Body text for description and content details.</p>
+            <p class="helper-text">Helper text / hint / extra details.</p>
+        </article>
+
+        <article class="card stack">
+            <h2 class="heading-md">Buttons</h2>
+            <div class="button-group">
+                <button class="button primary" type="button">Primary</button>
+                <button class="button secondary" type="button">
+                    Secondary
+                </button>
+                <button class="button inverted" type="button">Inverted</button>
+                <button class="button outlined" type="button">Outlined</button>
+            </div>
+            <div class="row">
+                <button
+                    class="icon-button primary"
+                    type="button"
+                    aria-label="Edit">
+                    ✎
+                </button>
+                <button
+                    class="icon-button secondary"
+                    type="button"
+                    aria-label="Save">
+                    ▲
+                </button>
+                <button
+                    class="icon-button danger"
+                    type="button"
+                    aria-label="Delete">
+                    🗑
+                </button>
+            </div>
+        </article>
+
+        <article class="card stack">
+            <h2 class="heading-md">Inputs</h2>
+            <div class="field-width">
+                <label class="label" for="search">Search</label>
+                <div class="search-field">
+                    <span class="search-icon">⌕</span>
+                    <input id="search" type="text" placeholder="Search" />
+                </div>
+            </div>
+            <div class="field-width">
+                <label class="label" for="name">Text Box</label>
+                <input id="name" type="text" placeholder="Enter your name" />
+            </div>
+            <div class="field-width">
+                <label class="label" for="note">Textarea</label>
+                <textarea id="note" placeholder="Add a note..."></textarea>
+            </div>
+        </article>
+
+        <article class="card stack">
+            <h2 class="heading-md">Toggle / Switch</h2>
+            <div class="row">
+                <label class="switch" aria-label="Notifications">
+                    <input type="checkbox" checked />
+                    <span class="slider"></span>
+                </label>
+                <span>Notifications On</span>
+            </div>
+            <div class="row">
+                <label class="switch" aria-label="Live updates">
+                    <input type="checkbox" />
+                    <span class="slider"></span>
+                </label>
+                <span>Live Updates Off</span>
+            </div>
+            <div class="row">
+                <span class="chip success">Active</span>
+                <span class="chip neutral">Pending</span>
+            </div>
+        </article>
+
+        <article class="card stack">
+            <h2 class="heading-md">Grid Layout Example</h2>
+            <div class="grid compact">
+                <div class="card">Block 1</div>
+                <div class="card">Block 2</div>
+                <div class="card">Block 3</div>
+                <div class="card">Block 4</div>
+            </div>
+        </article>
+    </section>
+
+    <section class="card stack">
+        <button id="home-action" class="button primary" type="button">
+            Run Api Test
+        </button>
+        <p id="home-message" class="helper-text"></p>
+    </section>
+</section>
+
+
+==================================================
+FILE: ./src/views/preview-page/view.js
+==================================================
+
+// API handler usage example
+import UsersStorage from "../../services/api/users.js";
+
+let clickHandler;
+
+export function mount(rootElement) {
+    const button = rootElement.querySelector("#home-action");
+    const message = rootElement.querySelector("#home-message");
+
+    if (!button || !message) {
+        return;
+    }
+
+    clickHandler = () => {
+        message.textContent = `Api test run at ${new Date().toLocaleTimeString()}.
+        All users: ${JSON.stringify(UsersStorage.getAllUsersMockData())}
+        User by ID (USR-1002): ${JSON.stringify(UsersStorage.getUserByIdMockData("USR-1002"))}
+        Users by Status (active): ${JSON.stringify(UsersStorage.getUsersByStatusMockData("active"))}`;
+    };
+
+    button.addEventListener("click", clickHandler);
+}
+
+export function unmount(rootElement) {
+    const button = rootElement.querySelector("#home-action");
+
+    if (button && clickHandler) {
+        button.removeEventListener("click", clickHandler);
+    }
+
+    clickHandler = null;
+}
+
