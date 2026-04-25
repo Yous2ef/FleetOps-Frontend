@@ -1,0 +1,318 @@
+/* ════════════════════════════════════════════════════════════
+   arriving-alerts / view.css — Mobile-First
+   ════════════════════════════════════════════════════════════ */
+
+.aa-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  animation: view-rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Alert Banner ─────────────────────────────────────────── */
+.aa-alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background-color: color-mix(in srgb, var(--status-danger) 88%, #000);
+  border-radius: var(--radius-md);
+  color: var(--text-inverse);
+  overflow: hidden;
+  box-shadow: 0 8px 24px -4px color-mix(in srgb, var(--status-danger) 35%, transparent);
+}
+
+.aa-alert-banner__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--text-inverse) 15%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.aa-alert-banner__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.aa-alert-banner__body strong {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-inverse);
+}
+
+.aa-alert-banner__body span {
+  font-size: 0.82rem;
+  color: color-mix(in srgb, var(--text-inverse) 85%, transparent);
+}
+
+/* ── Map Card ─────────────────────────────────────────────── */
+.aa-map-card {
+  position: relative;
+  border-radius: var(--radius-lg);
+  min-height: 320px;
+  background: linear-gradient(145deg,
+    color-mix(in srgb, var(--text-primary) 85%, #000),
+    color-mix(in srgb, var(--accent-primary) 15%, var(--text-primary))
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.aa-map-recenter {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 38px;
+  height: 38px;
+  background-color: var(--bg-surface);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-md);
+  transition: transform var(--transition), box-shadow var(--transition);
+  z-index: 10;
+}
+
+.aa-map-recenter:hover {
+  transform: scale(1.08);
+  box-shadow: var(--shadow-card);
+}
+
+.aa-pin-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.aa-pin {
+  color: color-mix(in srgb, var(--bg-surface) 90%, var(--border-subtle));
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,0.5));
+  animation: aa-bounce 2.2s ease-in-out infinite;
+}
+
+@keyframes aa-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+.aa-ripple {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 1.5px solid color-mix(in srgb, var(--text-inverse) 35%, transparent);
+  border-radius: 50%;
+  animation: ripple-out 2.4s ease-out infinite;
+}
+
+.aa-ripple--1 { width: 100px; height: 32px; animation-delay: 0s; }
+.aa-ripple--2 { width: 170px; height: 55px; animation-delay: 0.5s; }
+.aa-ripple--3 { width: 240px; height: 76px; animation-delay: 1s; }
+
+.aa-distance-badge {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  padding: 10px 22px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-card);
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.aa-distance-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-primary);
+  animation: pulse-ring 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* ── Payment Card ─────────────────────────────────────────── */
+.aa-payment-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px;
+}
+
+.aa-payment-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.aa-payment-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background-color: color-mix(in srgb, var(--accent-primary) 10%, var(--bg-base));
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 22%, var(--border-subtle));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-primary);
+}
+
+.aa-payment-amount {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* ── Instructions Card ────────────────────────────────────── */
+.aa-instructions-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px;
+}
+
+.aa-instructions-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.aa-instructions-card__icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.aa-instructions-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-style: italic;
+  margin: 0;
+  padding: 12px;
+  background-color: var(--bg-base);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent-primary);
+}
+
+.aa-instructions-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  text-decoration: none;
+  align-self: flex-start;
+  transition: color var(--transition);
+}
+
+.aa-instructions-edit:hover { color: var(--accent-hover); }
+
+/* ── Driver Card ──────────────────────────────────────────── */
+.aa-driver-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.aa-driver-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aa-driver-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--accent-primary) 10%, var(--bg-base));
+  border: 2px solid color-mix(in srgb, var(--accent-primary) 30%, var(--border-subtle));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-primary);
+  flex-shrink: 0;
+}
+
+.aa-driver-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aa-driver-details strong { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+.aa-driver-details span   { font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 3px; }
+
+.aa-driver-actions { display: flex; gap: 8px; }
+
+.aa-action-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.aa-action-btn:hover {
+  background-color: color-mix(in srgb, var(--accent-primary) 10%, var(--bg-surface));
+  border-color: color-mix(in srgb, var(--accent-primary) 30%, var(--border-subtle));
+  color: var(--accent-primary);
+}
+
+/* ── Ready CTA ────────────────────────────────────────────── */
+.aa-ready-btn {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  gap: 10px;
+  box-shadow: 0 6px 20px -4px color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+
+.aa-ready-btn:hover { transform: translateY(-2px); }

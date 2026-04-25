@@ -1,0 +1,53 @@
+<div class="dp-view">
+  <div class="dp-sheet">
+    <h1 class="dp-title">Delivery Instructions</h1>
+
+    <div class="dp-banner">
+      <i class="bi bi-info-circle"></i>
+      <span>Can be updated until driver is out for delivery</span>
+    </div>
+
+    <div class="dp-grid" role="group">
+      
+      <button class="dp-card" type="button" data-option="doorbell">
+        <div class="dp-card__icon"><i class="bi bi-bell"></i></div>
+        <span class="dp-card__label">Ring the doorbell</span>
+      </button>
+
+      <button class="dp-card dp-card--active" type="button" data-option="no-disturb">
+        <div class="dp-card__icon"><i class="bi bi-dash-circle"></i></div>
+        <span class="dp-card__label">Do not disturb</span>
+      </button>
+
+      <button class="dp-card" type="button" data-option="leave-door">
+        <div class="dp-card__icon"><i class="bi bi-door-closed"></i></div>
+        <span class="dp-card__label">Leave at door</span>
+      </button>
+
+      <button class="dp-card" type="button" data-option="neighbor">
+        <div class="dp-card__icon"><i class="bi bi-people"></i></div>
+        <span class="dp-card__label">Leave with neighbor</span>
+      </button>
+
+      <button class="dp-card" type="button" data-option="reception">
+        <div class="dp-card__icon"><i class="bi bi-building"></i></div>
+        <span class="dp-card__label">Leave with reception</span>
+      </button>
+
+      <button class="dp-card" type="button" data-option="unattended">
+        <div class="dp-card__icon"><i class="bi bi-shield-lock"></i></div>
+        <span class="dp-card__label">Do not leave unattended</span>
+      </button>
+    </div>
+
+    <div class="dp-notes">
+      <label class="dp-notes__label" for="dp-notes-input">Additional notes for your driver</label>
+      <textarea id="dp-notes-input" class="dp-notes__textarea" rows="3" placeholder="e.g. Apt 4B, through the side gate..."></textarea>
+    </div>
+
+    <div class="dp-actions">
+      <button class="dp-btn-save" id="dp-save-btn" type="button">Save Instructions</button>
+      <a href="/order-confirmed" data-link class="dp-btn-cancel" id="dp-cancel-btn">← Back</a>
+    </div>
+  </div>
+</div>
