@@ -1,15 +1,74 @@
-﻿<section class="view-page dashboard-page stack">
-    <section class="card stack">
-        <span class="chip neutral">Maintenance Module</span>
-        <h1 class="heading-lg">Dashboard</h1>
-        <p>Track maintenance activity, urgent jobs, and current workshop load in one place.</p>
+﻿<!-- Dashboard View — FleetOps Maintenance Platform -->
+<!-- NOTE: Left sidebar navigation is handled separately by another team member. -->
+<!-- This file covers only the main content area. -->
+
+<div class="dashboard-wrapper">
+<link rel="stylesheet" href="./src/views/dashboard/view.css">
+  <!-- ── Top Header Bar ───────────────────────────────────────────── -->
+
+  <!-- ── KPI Cards ─────────────────────────────────────────────────── -->
+  <section class="kpi-grid" id="kpi-grid">
+    <!-- Rendered by view.js -->
+  </section>
+
+  <!-- ── Alerts Banner ─────────────────────────────────────────────── -->
+  <section class="alerts-section" id="alerts-section">
+    <!-- Rendered by view.js -->
+  </section>
+
+  <!-- ── Bottom Grid ───────────────────────────────────────────────── -->
+  <div class="dashboard-bottom-grid">
+
+    <!-- Recent Work Orders -->
+    <section class="panel recent-work-orders">
+      <div class="panel-header">
+        <h2 class="panel-title">Recent Work Orders</h2>
+        <a href="#" class="panel-view-all">View All →</a>
+      </div>
+      <div class="table-wrapper">
+        <table class="wo-table" id="wo-table">
+          <thead>
+            <tr>
+              <th>WO ID</th>
+              <th>Vehicle</th>
+              <th>Type</th>
+              <th>Mechanic</th>
+              <th>Status</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody id="wo-tbody">
+            <!-- Rendered by view.js -->
+          </tbody>
+        </table>
+      </div>
     </section>
 
-    <section class="card stack">
-        <h2 class="heading-md">Quick Notes</h2>
-        <p>
-            This page is ready as an independent route and can now be connected
-            to live API data and business actions.
-        </p>
-    </section>
-</section>
+    <!-- Right-side panels -->
+    <aside class="right-panels">
+
+      <!-- Vehicles Needing Attention -->
+      <section class="panel vehicles-attention">
+        <div class="panel-header">
+          <h2 class="panel-title">Vehicles Needing Attention</h2>
+          <span class="panel-count" id="vehicles-count">5</span>
+        </div>
+        <ul class="vehicle-list" id="vehicles-attention-list">
+          <!-- Rendered by view.js -->
+        </ul>
+      </section>
+
+      <!-- Upcoming / Open Maintenance -->
+      <section class="panel upcoming-maintenance">
+        <div class="panel-header">
+          <h2 class="panel-title">Upcoming / Open Maintenance</h2>
+        </div>
+        <ul class="maintenance-list" id="upcoming-maintenance-list">
+          <!-- Rendered by view.js -->
+        </ul>
+      </section>
+
+    </aside>
+  </div>
+
+</div>

@@ -1,8 +1,298 @@
-<section class="view-page app-section fleet-management-page stack">
-    <section class="card stack">
-        <h1 class="heading-lg">Fleet Management</h1>
-        <p>This module is ready for implementation.</p>
-        <p class="helper-text">Use this section to build the fleet management workflow.</p>
-    </section>
-</section>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fleet Management — FleetOps</title>
+  <link rel="stylesheet" href="/src/views/fleet-management/view.css" />
+  <!-- Chart.js is loaded dynamically by view.js via loadChartJS() -->
+</head>
+<body>
 
+  <main class="page-body">
+
+    <div class="page-title-row">
+      <div>
+        <h1 class="page-title">Fleet Management</h1>
+        <p class="page-subtitle" id="vehicleCount">8 vehicles in fleet</p>
+      </div>
+      <button class="add-vehicle-btn" id="openModalBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Vehicle
+      </button>
+    </div>
+
+    <div class="alert-banner" id="alertBanner" role="alert">
+      <div class="alert-left">
+        <svg class="alert-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div>
+          <p class="alert-title" id="alertTitle">2 vehicle(s) damaged — needs mechanic assignment</p>
+          <p class="alert-sub">Click "Assign Mechanic" on damaged vehicles to schedule repairs</p>
+        </div>
+      </div>
+      <span class="alert-tag" id="alertTag">1 in maintenance</span>
+    </div>
+
+    <div class="filter-row">
+      <div class="table-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="plateSearch" placeholder="Search by plate number..." />
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="All" role="tab" aria-selected="true">All</button>
+        <button class="tab" data-tab="Available" role="tab" aria-selected="false">Available</button>
+        <button class="tab" data-tab="In Service" role="tab" aria-selected="false">In Service</button>
+        <button class="tab" data-tab="Damaged" role="tab" aria-selected="false">
+          Damaged <span class="tab-count" id="damagedCount">2</span>
+        </button>
+        <button class="tab" data-tab="In Maintenance" role="tab" aria-selected="false">In Maintenance</button>
+        <button class="tab" data-tab="Out of Service" role="tab" aria-selected="false">Out of Service</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <table class="fleet-table" aria-label="Fleet vehicles">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Plate</th>
+            <th>Type</th>
+            <th>Max Weight</th>
+            <th>Max Volume</th>
+            <th>Odometer</th>
+            <th>Status</th>
+            <th>Mechanic</th>
+            <th>Market Value</th>
+            <th>Last Service</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="fleetTableBody"></tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <!-- ══════════════════════════════════════════
+       Add Vehicle Modal
+  ══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">Add Vehicle</h2>
+        <button class="modal-close-btn" id="closeModalBtn" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="fieldPlate">Plate Number <span class="required">*</span></label>
+          <input class="form-input" type="text" id="fieldPlate" placeholder="e.g. TRK-050" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fieldMaxWeight">Max Weight (kg) <span class="required">*</span></label>
+          <input class="form-input" type="number" id="fieldMaxWeight" placeholder="e.g. 500" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fieldMaxVolume">Max Volume (m³) <span class="required">*</span></label>
+          <input class="form-input" type="number" id="fieldMaxVolume" placeholder="e.g. 12" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fieldMarketValue">Market Value (SAR)</label>
+          <input class="form-input" type="number" id="fieldMarketValue" placeholder="e.g. 85000" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fieldOdometer">Odometer (km)</label>
+          <input class="form-input" type="number" id="fieldOdometer" placeholder="e.g. 0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fieldType">Vehicle Type <span class="required">*</span></label>
+          <select class="form-select" id="fieldType">
+            <option value="Light">Light</option>
+            <option value="Heavy">Heavy</option>
+            <option value="Refrigerated">Refrigerated</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="cancelModalBtn">Cancel</button>
+        <button class="btn-save" id="saveVehicleBtn">Save Vehicle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       Assign Mechanic Modal
+  ══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="assignMechanicModal" role="dialog" aria-modal="true" hidden>
+    <div class="modal-card mechanic-modal">
+
+      <div class="modal-header">
+        <div class="header-content-wrapper">
+          <div class="header-icon-circle">🛠️</div>
+          <div>
+            <h2 class="modal-title">Assign Mechanic</h2>
+            <p id="assignVehicleInfo" class="modal-subtitle">TRK-050 — Refrigerated</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeAssignModal" aria-label="Close modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="damage-report-banner">
+          <p class="report-label">DAMAGE REPORT</p>
+          <p class="report-text" id="damageReportText">Electrical system failure — AC unit and refrigeration not working</p>
+        </div>
+
+        <label class="form-label" style="margin-bottom:10px; display:block;">Select Mechanic</label>
+        <div class="mechanic-list" id="mechanicList"></div>
+
+        <div class="form-group" style="margin-top:20px;">
+          <label class="form-label">Repair Notes</label>
+          <textarea class="form-input notes-area" id="repairNotes"
+            placeholder="Describe the required repairs..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Estimated Completion Date</label>
+          <input type="text" class="form-input" id="completionDate" placeholder="e.g. Apr 18, 2026" />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" id="cancelAssignModal">Cancel</button>
+        <button class="btn-save-repair" id="confirmAssignBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+          Assign &amp; Start Repair
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       Vehicle Details Modal
+  ══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="vehicleDetailsModal" role="dialog" aria-modal="true" hidden>
+    <div class="modal-card details-modal">
+
+      <!-- Fixed Header -->
+      <div class="modal-header details-header">
+        <div class="header-content-wrapper">
+          <div class="details-icon-circle">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="3" width="15" height="13" rx="2"/>
+              <path d="M16 8h4l3 5v3h-7V8z"/>
+              <circle cx="5.5" cy="18.5" r="2.5"/>
+              <circle cx="18.5" cy="18.5" r="2.5"/>
+            </svg>
+          </div>
+          <div>
+            <div class="details-title-row">
+              <span class="details-plate" id="detailsPlate">TRK-028</span>
+              <span class="details-status-badge" id="detailsStatusBadge"></span>
+            </div>
+            <p class="modal-subtitle" id="detailsSubtitle">Light · V-008</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeDetailsModal" aria-label="Close">✕</button>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="modal-body details-body">
+
+        <!-- ── Damage Report Banner (shown only when status === 'Damaged') ── -->
+        <div class="details-damage-banner" id="detailsDamageBanner" hidden>
+          <div class="details-damage-header">
+            <svg class="details-damage-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span class="details-damage-title">Damage Report</span>
+          </div>
+          <p class="details-damage-text" id="detailsDamageText"></p>
+          <button class="details-assign-now-btn" id="detailsAssignNowBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+            Assign Mechanic Now
+          </button>
+        </div>
+
+        <!-- 4-Card Stats Grid -->
+        <div class="details-stats-grid">
+          <div class="details-stat-card">
+            <p class="stat-label">Status</p>
+            <p class="stat-value" id="detailsStatStatus">—</p>
+          </div>
+          <div class="details-stat-card">
+            <p class="stat-label">Odometer</p>
+            <p class="stat-value" id="detailsStatOdometer">—</p>
+          </div>
+          <div class="details-stat-card">
+            <p class="stat-label">Market Value</p>
+            <p class="stat-value" id="detailsStatValue">—</p>
+          </div>
+          <div class="details-stat-card">
+            <p class="stat-label">Last Service</p>
+            <p class="stat-value" id="detailsStatService">—</p>
+          </div>
+        </div>
+
+        <!-- Side-by-Side Charts -->
+        <div class="details-charts-row">
+          <div class="details-chart-card">
+            <p class="chart-title">Odometer History</p>
+            <div class="chart-wrap">
+              <canvas id="odoChart"></canvas>
+            </div>
+          </div>
+          <div class="details-chart-card">
+            <p class="chart-title">Fuel Efficiency (km/L)</p>
+            <div class="chart-wrap">
+              <canvas id="fuelChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Documents & Alerts -->
+        <p class="details-section-title">Documents &amp; Alerts</p>
+        <div class="details-docs-row">
+          <div class="details-doc-card doc-green">
+            <div>
+              <p class="doc-label">Insurance Expiry</p>
+              <p class="doc-date" id="detailsInsurance">Jul 15, 2026</p>
+            </div>
+            <span class="doc-dot dot-green"></span>
+          </div>
+          <div class="details-doc-card doc-amber">
+            <div>
+              <p class="doc-label">Inspection Expiry</p>
+              <p class="doc-date" id="detailsInspection">May 01, 2026</p>
+            </div>
+            <span class="doc-dot dot-amber"></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="view.js"></script>
+</body>
+</html>

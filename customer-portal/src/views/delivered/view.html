@@ -1,0 +1,110 @@
+<div class="dv-view">
+  <div class="dv-hero">
+    <div class="dv-hero-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 12L10 17L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1 class="dv-hero-title">Delivered!</h1>
+    <span class="dv-hero-time">10:47 AM, Oct 24</span>
+  </div>
+
+  <div class="dv-card">
+    <div class="dv-label">PROOF OF DELIVERY</div>
+    <p class="dv-address">Delivered at 124 Fleet Way, Suite 402</p>
+    <div class="dv-signature-section">
+      <span class="dv-signed-by">Signed by: John Doe</span>
+      <div class="dv-signature-box">
+        <svg width="80" height="40" viewBox="0 0 80 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 20C15 10 25 30 35 15C45 5 55 25 65 20C70 18 75 15 80 10" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="dv-map-card">
+    <div class="dv-map-pin">
+      <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M60 0C26.8629 0 0 26.8629 0 60C0 93.1371 60 120 60 120C60 120 120 93.1371 120 60C120 26.8629 93.1371 0 60 0Z" fill="#EF4444" stroke="#B91C1C" stroke-width="2"/>
+        <circle cx="60" cy="60" r="20" fill="white" stroke="#B91C1C" stroke-width="2"/>
+      </svg>
+    </div>
+    <div class="dv-map-badge">
+      <div class="dv-map-dot"></div>
+      Final Destination
+    </div>
+  </div>
+
+  <div class="dv-card">
+    <div class="dv-feedback-header">
+      <h2 class="dv-feedback-title">How was your delivery?</h2>
+      <p class="dv-feedback-subtitle">Your feedback helps us improve our service.</p>
+    </div>
+
+    <div id="dv-stars" class="dv-stars">
+      <button data-value="1"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+      <button data-value="2"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+      <button data-value="3"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+      <button data-value="4"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+      <button data-value="5"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    </div>
+
+    <div class="dv-condition-group">
+      <p class="dv-condition-title">Was your parcel in good condition?</p>
+      <div class="dv-pills">
+        <button class="dv-pill" data-condition="Excellent">Excellent</button>
+        <button class="dv-pill" data-condition="Good">Good</button>
+        <button class="dv-pill" data-condition="Damaged">Damaged</button>
+      </div>
+    </div>
+
+    <div class="dv-comment-group">
+      <label class="dv-comment-label">Anything to add?</label>
+      <textarea id="dv-comments" class="dv-textarea" placeholder="Write your comments here..."></textarea>
+    </div>
+
+    <button id="dv-submit-btn" class="dv-submit-btn" disabled>Submit Feedback</button>
+  </div>
+
+  <div class="dv-card">
+    <div class="dv-label">DELIVERY TIMELINE</div>
+    <div class="dv-timeline">
+      <div class="dv-tl-item">
+        <div class="dv-tl-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="dv-tl-content">
+          <div class="dv-tl-title">Order Received</div>
+          <div class="dv-tl-time">Oct 22, 09:15 AM</div>
+        </div>
+      </div>
+      <div class="dv-tl-item">
+        <div class="dv-tl-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="dv-tl-content">
+          <div class="dv-tl-title">In Transit</div>
+          <div class="dv-tl-time">Oct 23, 02:40 PM</div>
+        </div>
+      </div>
+      <div class="dv-tl-item">
+        <div class="dv-tl-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="dv-tl-content">
+          <div class="dv-tl-title">Out for Delivery</div>
+          <div class="dv-tl-time">Oct 24, 08:30 AM</div>
+        </div>
+      </div>
+      <div class="dv-tl-item">
+        <div class="dv-tl-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="dv-tl-content">
+          <div class="dv-tl-title">Delivered</div>
+          <div class="dv-tl-time">Oct 24, 10:47 AM</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

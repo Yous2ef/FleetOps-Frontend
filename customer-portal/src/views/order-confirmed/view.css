@@ -1,0 +1,415 @@
+.oc-view {
+  display:        flex;
+  flex-direction: column;
+  gap:            24px;
+  width:          100%;
+  margin:         0 auto;
+  height:         auto !important; 
+  min-height:     min-content !important;
+  padding-bottom: 220px !important; 
+  animation:      view-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (min-width: 901px) {
+    .oc-view {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding-bottom: 100px !important;
+    }
+  .oc-hero-card               { grid-column: 1; grid-row: 1; }
+  .oc-warehouse-card          { grid-column: 1; grid-row: 2; }
+  .oc-timeline-card           { grid-column: 1; grid-row: 3 / 6; }
+  .oc-info-card--address      { grid-column: 2; grid-row: 1; }
+  .oc-info-card--arrival      { grid-column: 2; grid-row: 2; }
+  .oc-instructions-card       { grid-column: 2; grid-row: 3; }
+  .oc-items-card              { grid-column: 2; grid-row: 4; }
+  .oc-promo-card              { grid-column: 2; grid-row: 5; }
+}
+
+.oc-card-heading {
+  font-family:   var(--font-display);
+  font-size:     1rem;
+  font-weight:   700;
+  color:         var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.oc-hero-card {
+  display:        flex;
+  flex-direction: column;
+  gap:            16px;
+}
+
+.oc-hero-top {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  flex-wrap:   wrap;
+}
+
+.oc-status-dot {
+  display:          inline-block;
+  width:            6px;
+  height:           6px;
+  border-radius:    50%;
+  background-color: var(--accent-primary);
+  animation:        pulse-ring 1.8s ease-in-out infinite;
+}
+
+.oc-hero-title {
+  font-family:    var(--font-display);
+  font-size:      clamp(2rem, 4vw, 2.75rem);
+  font-weight:    800;
+  color:          var(--text-primary);
+  line-height:    1.1;
+  letter-spacing: -0.03em;
+  margin:         0;
+}
+
+.oc-hero-subtitle {
+  font-size:   0.9rem;
+  color:       var(--text-secondary);
+  line-height: 1.65;
+  margin:      0;
+}
+
+.oc-notify-btn { gap: 8px; }
+
+.oc-warehouse-card {
+  position:      relative;
+  border-radius: var(--radius-lg);
+  height:        220px;
+  overflow:      hidden;
+  box-shadow:    var(--shadow-card);
+  display:       flex;
+  align-items:   flex-end;
+  padding:       20px;
+}
+
+.oc-warehouse-bg {
+  position:         absolute;
+  inset:            0;
+  background-color: color-mix(in srgb, var(--accent-primary) 18%, var(--text-primary));
+  background-image:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--accent-primary) 35%, transparent) 0%, transparent 65%),
+    repeating-linear-gradient(
+      0deg, transparent, transparent 29px,
+      color-mix(in srgb, var(--text-inverse) 5%, transparent) 29px,
+      color-mix(in srgb, var(--text-inverse) 5%, transparent) 30px
+    ),
+    repeating-linear-gradient(
+      90deg, transparent, transparent 29px,
+      color-mix(in srgb, var(--text-inverse) 5%, transparent) 29px,
+      color-mix(in srgb, var(--text-inverse) 5%, transparent) 30px
+    );
+}
+
+.oc-warehouse-overlay {
+  position:   absolute;
+  inset:      0;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--text-primary) 70%, transparent),
+    transparent 55%
+  );
+}
+
+.oc-warehouse-badge {
+  position:         relative;
+  z-index:          2;
+  display:          flex;
+  align-items:      center;
+  gap:              12px;
+  background-color: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+  backdrop-filter:  blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding:          12px 16px;
+  border-radius:    var(--radius-md);
+  border:           1px solid color-mix(in srgb, var(--border-subtle) 60%, transparent);
+  width:            100%;
+}
+
+.oc-warehouse-badge__icon {
+  width:            42px;
+  height:           42px;
+  border-radius:    var(--radius-sm);
+  background-color: color-mix(in srgb, var(--accent-primary) 12%, var(--bg-surface));
+  display:          flex;
+  align-items:      center;
+  justify-content:  center;
+  color:            var(--accent-primary);
+  flex-shrink:      0;
+}
+
+.oc-timeline-card { padding: 24px; }
+
+.oc-timeline {
+  display:        flex;
+  flex-direction: column;
+}
+
+.oc-tl-item {
+  display:        flex;
+  align-items:    flex-start;
+  gap:            14px;
+  position:       relative;
+  padding-bottom: 24px;
+}
+
+.oc-tl-item--last { padding-bottom: 0; }
+
+.oc-tl-item:not(.oc-tl-item--last)::after {
+  content:  '';
+  position: absolute;
+  left:     12px;
+  top:      26px;
+  bottom:   0;
+  width:    2px;
+}
+
+.oc-tl-item--done::after    { background-color: var(--status-success); }
+.oc-tl-item--pending::after { background-color: var(--border-subtle);  }
+
+.oc-tl-dot {
+  width:           26px;
+  height:          26px;
+  border-radius:   50%;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  flex-shrink:     0;
+  position:        relative;
+  z-index:         1;
+}
+
+.oc-tl-dot--done {
+  background-color: var(--status-success);
+  color:            var(--text-inverse);
+}
+
+.oc-tl-dot--pending {
+  background-color: var(--bg-surface);
+  border:           2.5px solid var(--border-subtle);
+}
+
+.oc-tl-dot--pending::after {
+  content:          '';
+  width:            8px;
+  height:           8px;
+  border-radius:    50%;
+  background-color: var(--border-subtle);
+}
+
+.oc-tl-body {
+  padding-top:    3px;
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+}
+
+.oc-tl-body strong { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); }
+.oc-tl-body span   { font-size: 0.77rem;  color: var(--text-secondary); }
+.oc-tl-body--muted strong { color: var(--text-secondary); font-weight: 500; }
+
+.oc-info-card {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+  padding:        20px 24px;
+}
+
+.oc-info-icon {
+  width:            36px;
+  height:           36px;
+  border-radius:    var(--radius-sm);
+  background-color: var(--bg-base);
+  border:           1px solid var(--border-subtle);
+  display:          flex;
+  align-items:      center;
+  justify-content:  center;
+  color:            var(--text-secondary);
+  margin-bottom:    2px;
+}
+
+.oc-info-icon--success { color: var(--accent-primary); }
+
+.oc-info-value {
+  font-size:   0.95rem;
+  font-weight: 700;
+  color:       var(--text-primary);
+  line-height: 1.4;
+}
+
+.oc-instructions-card {
+  display:          flex;
+  align-items:      center;
+  gap:              14px;
+  padding:          14px 18px;
+  text-decoration:  none;
+  cursor:           pointer;
+  background-color: color-mix(in srgb, var(--accent-primary) 8%, var(--bg-slate));
+  border-radius:    16px;
+  border:           1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-subtle));
+  transition:       background-color var(--transition), transform var(--transition),
+                    box-shadow var(--transition);
+}
+
+.oc-instructions-card:hover {
+  background-color: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-slate));
+  transform:        translateY(-1px);
+  box-shadow:       var(--shadow-sm);
+}
+
+.oc-instructions-card:active { transform: translateY(0); }
+
+.oc-instructions-card__icon-wrap {
+  width:            40px;
+  height:           40px;
+  border-radius:    50%;
+  background-color: var(--bg-surface);
+  display:          flex;
+  align-items:      center;
+  justify-content:  center;
+  flex-shrink:      0;
+  color:            var(--accent-primary);
+  box-shadow:       var(--shadow-sm);
+}
+
+.oc-instructions-card__label {
+  flex:        1;
+  font-size:   0.9rem;
+  font-weight: 600;
+  color:       var(--text-primary);
+  font-family: var(--font-body);
+}
+
+.oc-instructions-card__chevron {
+  flex-shrink: 0;
+  color:       var(--text-secondary);
+  transition:  transform var(--transition), color var(--transition);
+}
+
+.oc-instructions-card:hover .oc-instructions-card__chevron {
+  color:     var(--accent-primary);
+  transform: translateY(2px);
+}
+
+.oc-items-card { display: flex; flex-direction: column; }
+
+.oc-items-header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  margin-bottom:   16px;
+}
+
+.oc-items-header .oc-card-heading { margin-bottom: 0; }
+
+.oc-item {
+  display:     flex;
+  align-items: center;
+  gap:         14px;
+  padding:     12px 0;
+}
+
+.oc-item__img {
+  width:            56px;
+  height:           56px;
+  border-radius:    var(--radius-sm);
+  flex-shrink:      0;
+  background-color: var(--bg-base);
+  border:           1px solid var(--border-subtle);
+}
+
+.oc-item__img--1 { background-color: color-mix(in srgb, var(--accent-primary)   10%, var(--bg-hover)); }
+.oc-item__img--2 { background-color: color-mix(in srgb, var(--status-warning)   10%, var(--bg-hover)); }
+.oc-item__img--3 { background-color: color-mix(in srgb, var(--text-secondary)   10%, var(--bg-hover)); }
+
+.oc-item__info {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  gap:            3px;
+}
+
+.oc-item__info strong { font-size: 0.875rem; font-weight: 600; color: var(--text-primary);   }
+.oc-item__info span   { font-size: 0.75rem;  color: var(--text-secondary); }
+
+.oc-item__price {
+  font-size:   0.95rem;
+  font-weight: 700;
+  color:       var(--text-primary);
+  flex-shrink: 0;
+}
+
+.oc-item-divider {
+  height:           1px;
+  background-color: var(--border-subtle);
+}
+
+.oc-items-total {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding-top:     16px;
+  margin-top:      4px;
+  border-top:      2px solid var(--border-subtle);
+}
+
+.oc-items-total__value {
+  font-family: var(--font-display);
+  font-size:   1.2rem;
+  font-weight: 800;
+  color:       var(--text-primary);
+}
+
+.oc-promo-card {
+  position:         relative;
+  overflow:         hidden;
+  background-color: var(--text-primary);
+  border-radius:    var(--radius-lg);
+  padding:          28px;
+  display:          flex;
+  flex-direction:   column;
+  gap:              10px;
+  box-shadow:       var(--shadow-md);
+}
+
+.oc-promo-card__bg-icon {
+  position:       absolute;
+  right:          -20px;
+  bottom:         -20px;
+  color:          color-mix(in srgb, var(--text-inverse) 6%, transparent);
+  transform:      rotate(-15deg);
+  pointer-events: none;
+}
+
+.oc-promo-card__title {
+  font-family: var(--font-display);
+  font-size:   1.1rem;
+  font-weight: 800;
+  color:       var(--text-inverse);
+  position:    relative;
+  z-index:     1;
+}
+
+.oc-promo-card__body {
+  font-size:   0.85rem;
+  color:       color-mix(in srgb, var(--text-inverse) 75%, transparent);
+  line-height: 1.6;
+  position:    relative;
+  z-index:     1;
+}
+
+.oc-promo-card__btn {
+  position:         relative;
+  z-index:          1;
+  align-self:       flex-start;
+  background-color: color-mix(in srgb, var(--text-inverse) 12%, transparent);
+  border-color:     color-mix(in srgb, var(--text-inverse) 25%, transparent);
+  color:            var(--text-inverse);
+  margin-top:       4px;
+}
+
+.oc-promo-card__btn:hover {
+  background-color: color-mix(in srgb, var(--text-inverse) 20%, transparent);
+}
