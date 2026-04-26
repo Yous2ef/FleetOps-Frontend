@@ -80,6 +80,7 @@ function renderInsurance(alerts) {
                 alert.status = "success";
             }
             renderInsurance(AlertData.insurance);
+            updateBadges(AlertData);
         });
     });
 }
@@ -114,6 +115,7 @@ function renderInspection(alerts) {
                 alert.status = "success";
             }
             renderInspection(AlertData.inspection);
+            updateBadges(AlertData);
         });
     });
 }
@@ -166,10 +168,10 @@ function initTabs() {
 
 function updateBadges(data) {
     const badges = {
-        odometer: data.odometer.length,
-        insurance: data.insurance.length,
-        inspection: data.inspection.length,
-        parts: data.parts.length
+        odometer:   data.odometer.filter(a => a.status !== 'success').length,
+        insurance:  data.insurance.filter(a => a.status !== 'success').length,
+        inspection: data.inspection.filter(a => a.status !== 'success').length,
+        parts:      data.parts.filter(a => a.status !== 'success').length
     };
 
     Object.keys(badges).forEach(type => {
