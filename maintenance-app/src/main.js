@@ -2,7 +2,7 @@ import { initRouter } from "./router/router.js";
 import {
     createIcons,
     icons,
-} from "https://unpkg.com/lucide@latest/dist/esm/lucide.js";
+} from "../../node_modules/lucide/dist/esm/lucide.mjs";
 
 initRouter({ outletId: "app-content" });
 createIcons({ icons });
