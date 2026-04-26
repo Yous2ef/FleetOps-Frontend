@@ -1,4 +1,5 @@
 import emergencyDispatchData from "../../services/storage/emergency-dispatch.js";
+import { createIcons, icons } from "../../../../node_modules/lucide/dist/esm/lucide.mjs";
 
 // State
 let selectedIncidentId = null;
