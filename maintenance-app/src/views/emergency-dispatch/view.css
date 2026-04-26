@@ -1,6 +1,279 @@
-﻿.emergency-dispatch-page {
-    max-width: 1100px;
-    margin: 0 auto;
-    display: grid;
-    gap: 16px;
+.emergency-dispatch-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+    padding: 20px;
 }
+
+/* Banner Styles */
+.emergency-banner {
+    background-color: #fff5f5;
+    border: 1px solid #feb2b2;
+    padding: 16px 24px;
+}
+
+.banner-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.icon-emergency {
+    color: #e53e3e;
+    width: 24px;
+    height: 24px;
+}
+
+.incident-badge {
+    background-color: #fed7d7;
+    color: #c53030;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    margin-left: 12px;
+}
+
+/* Grid Layout */
+.dispatch-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr 340px;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Incidents Panel */
+.incidents-panel {
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.section-title {
+    margin-bottom: 16px;
+    color: var(--color-text-title);
+}
+
+.incident-item {
+    padding: 12px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+    border: 1px solid transparent;
+}
+
+.incident-item:hover {
+    background-color: var(--color-surface-low);
+}
+
+.incident-item.active {
+    background-color: #fff5f5;
+    border-color: #feb2b2;
+}
+
+.incident-marker {
+    position: absolute;
+    left: 0;
+    top: 12px;
+    bottom: 12px;
+    width: 4px;
+    background-color: #e53e3e;
+    border-radius: 0 2px 2px 0;
+}
+
+.incident-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.incident-id {
+    font-weight: 700;
+    font-size: var(--font-size-sm);
+    color: #c53030;
+}
+
+.incident-vehicle {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.incident-time {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* Incident Details */
+.incident-details {
+    overflow-y: auto;
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 20px;
+}
+
+.title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.info-row i {
+    width: 18px;
+    height: 18px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+.detail-group {
+    margin-top: 24px;
+}
+
+.group-label {
+    display: block;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+
+.vehicle-mini-card {
+    background-color: var(--color-surface-low);
+    padding: 12px;
+    border-radius: var(--radius-md);
+}
+
+.issue-text {
+    line-height: 1.6;
+}
+
+.map-placeholder {
+    height: 200px;
+    background-color: var(--color-surface-highest);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    border-style: dashed;
+}
+
+.map-overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text-muted);
+}
+
+/* Mechanics Panel */
+.mechanics-panel {
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.mechanic-card {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-white);
+}
+
+.mechanic-header {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.mechanic-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background-color: #ebf4ff;
+    color: #2b6cb0;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.mechanic-avatar.secondary { background-color: #faf5ff; color: #6b46c1; }
+.mechanic-avatar.tertiary { background-color: #f0fff4; color: #276749; }
+
+.name-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge.warning { background-color: #feebc8; color: #9c4221; }
+.badge.success { background-color: #c6f6d5; color: #22543d; }
+
+.mechanic-info p {
+    margin: 0;
+    font-size: var(--font-size-xs);
+}
+
+.mechanic-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-bottom: 16px;
+}
+
+.mechanic-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.dispatch-btn {
+    width: 100%;
+    background-color: #e53e3e !important;
+}
+
+.dispatch-btn:hover {
+    background-color: #c53030 !important;
+}
+
+/* Utility classes */
+.status-pill {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.status-pill.pending {
+    background-color: #fff5f5;
+    color: #c53030;
+    border: 1px solid #feb2b2;
+}
+
+.text-primary { color: var(--color-primary); }
+.text-xs { font-size: var(--font-size-xs); }

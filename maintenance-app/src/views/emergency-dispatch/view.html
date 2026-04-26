@@ -1,15 +1,45 @@
-﻿<section class="view-page emergency-dispatch-page stack">
-    <section class="card stack">
-        <span class="chip neutral">Maintenance Module</span>
-        <h1 class="heading-lg">Emergency Dispatch</h1>
-        <p>Coordinate emergency repair calls and prioritize roadside recovery operations.</p>
-    </section>
+<section class="view-page emergency-dispatch-page stack">
+    
+    <!-- Top Alert Banner -->
+    <header class="emergency-banner card">
+        <div class="banner-content">
+            <div class="banner-title">
+                <i data-lucide="siren" class="icon-emergency"></i>
+                <h2 class="heading-md">Emergency Dispatch Center</h2>
+                <span id="incident-count-badge" class="incident-badge">0 active incidents</span>
+            </div>
+        </div>
+    </header>
 
-    <section class="card stack">
-        <h2 class="heading-md">Quick Notes</h2>
-        <p>
-            This page is ready as an independent route and can now be connected
-            to live API data and business actions.
-        </p>
-    </section>
+    <div class="dispatch-grid">
+        <!-- Column 1: Active Incidents -->
+        <aside class="incidents-panel card stack">
+            <h3 class="heading-sm section-title">Active Incidents</h3>
+            <div id="incidents-list" class="incidents-list">
+                <!-- Dynamic Content: Incident Items -->
+            </div>
+        </aside>
+
+        <!-- Column 2: Incident Details -->
+        <main class="incident-details stack">
+            <div id="incident-details-container" class="detail-card card stack">
+                <!-- Dynamic Content: Incident Details -->
+                <div class="empty-state-placeholder">
+                    <p class="text-muted">Select an incident to view details</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Column 3: Available Mechanics -->
+        <aside class="mechanics-panel card stack">
+            <div class="section-header">
+                <h3 class="heading-sm">Available Mechanics</h3>
+                <p class="text-xs text-muted">Sorted by proximity to breakdown location</p>
+            </div>
+
+            <div id="mechanics-list" class="mechanics-list stack">
+                <!-- Dynamic Content: Mechanic Cards -->
+            </div>  
+        </aside>
+    </div>
 </section>
