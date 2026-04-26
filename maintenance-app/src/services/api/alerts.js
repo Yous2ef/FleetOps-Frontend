@@ -1,4 +1,7 @@
 import alertsData from "../storage/alerts.js";
+import api from "/shared/api-handler.js";
+
+api.setBaseURL("http://localhost:3000");
 
 function getAlertsData() {
     return new Promise((resolve) => {
