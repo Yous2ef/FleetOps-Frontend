@@ -1,4 +1,10 @@
-import { normalizePath, notFoundRoute, routes } from "./routes.js";
+import {
+    canAccessPath,
+    normalizePath,
+    normalizeRole,
+    notFoundRoute,
+    routes,
+} from "./routes.js";
 
 export function initRouter({ outletId }) {
     const outlet = document.getElementById(outletId);
@@ -12,6 +18,16 @@ export function initRouter({ outletId }) {
     async function renderCurrentRoute() {
         const currentPath = normalizePath(window.location.pathname);
         const token = localStorage.getItem("token");
+        const userRaw = localStorage.getItem("user");
+        let currentRole = "";
+
+        if (userRaw) {
+            try {
+                currentRole = normalizeRole(JSON.parse(userRaw)?.role);
+            } catch {
+                currentRole = "";
+            }
+        }
 
         // ─── Route Guard (نظام الحماية) ──────────────────────────────────
 
@@ -26,10 +42,27 @@ export function initRouter({ outletId }) {
             navigateTo("/");
             return;
         }
+
+        // 3. تحقق من أن لدينا role مع التوكن
+        if (token && currentPath !== "/login" && !currentRole) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            navigateTo("/login");
+            return;
+        }
+
         // ─────────────────────────────────────────────────────────────────
 
         const activeRoute =
             routes.find((route) => route.path === currentPath) ?? notFoundRoute;
+
+        // تحقق من الصلاحيات
+        if (activeRoute.path !== "/login" && activeRoute.path !== "/404") {
+            if (!canAccessPath(activeRoute.path, currentRole)) {
+                navigateTo("/");
+                return;
+            }
+        }
 
         // ─── Layout Toggle (تعديل الهيكل الخارجي لصفحة الدخول) ────────────
         const shell = document.querySelector("[data-shell]");
@@ -45,7 +78,9 @@ export function initRouter({ outletId }) {
         }
 
         const cacheBuster = `?t=${Date.now()}`;
-        const htmlResponse = await fetch(`${activeRoute.view.html}${cacheBuster}`);
+        const htmlResponse = await fetch(
+            `${activeRoute.view.html}${cacheBuster}`,
+        );
         if (!htmlResponse.ok) {
             throw new Error(
                 `Failed to load HTML view: ${activeRoute.view.html}`,
@@ -76,7 +111,9 @@ export function initRouter({ outletId }) {
             }
         }
 
-        const routeModule = await import(`${activeRoute.view.js}${cacheBuster}`);
+        const routeModule = await import(
+            `${activeRoute.view.js}${cacheBuster}`
+        );
         currentRouteModule = routeModule;
 
         if (routeModule.mount) {

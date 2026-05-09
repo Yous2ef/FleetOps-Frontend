@@ -1,9 +1,47 @@
 import { initRouter } from "./router/router.js";
 import AuthService from "./services/api/auth.js";
+import { canAccessPath, normalizeRole } from "./router/routes.js";
 import {
     createIcons,
     icons,
 } from "../../node_modules/lucide/dist/esm/lucide.mjs";
+
+// Check if user is logged in and filter sidebar immediately
+const userRaw = localStorage.getItem("user");
+let currentUser = null;
+let currentRole = "";
+
+if (userRaw) {
+    try {
+        currentUser = JSON.parse(userRaw);
+        currentRole = normalizeRole(currentUser?.role);
+    } catch {
+        currentUser = null;
+        currentRole = "";
+    }
+}
+
+// Apply role-based filtering to sidebar links immediately
+if (currentUser && currentRole) {
+    document.querySelectorAll("[data-route]").forEach((link) => {
+        const routePath = link.getAttribute("data-route");
+        const allowedRolesAttr = link.getAttribute("data-allowed-roles");
+        const allowedRoles = allowedRolesAttr
+            ? allowedRolesAttr
+                  .split(",")
+                  .map((role) => role.trim().toLowerCase())
+                  .filter(Boolean)
+            : null;
+
+        if (!routePath) {
+            return;
+        }
+
+        link.hidden = Array.isArray(allowedRoles)
+            ? !allowedRoles.includes(currentRole)
+            : !canAccessPath(routePath, currentRole);
+    });
+}
 
 // 1. تهيئة الراوتر والأيقونات
 initRouter({ outletId: "app-content" });
@@ -31,19 +69,18 @@ function updateUserInfo() {
     if (userAvatarEl) {
         // أخذ أول حرفين من الاسم لعرضهم في الصورة الرمزية
         const initials = user.name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
             .toUpperCase()
             .substring(0, 2);
         userAvatarEl.textContent = initials;
     }
 }
-
 // 3. الأحداث التي تتم عند تغيير الصفحة (Route Changed)
 window.addEventListener("route:changed", () => {
     createIcons({ icons });
-    updateUserInfo(); // تحديث بيانات المستخدم احتياطياً
+    updateUserInfo();
 });
 
 // 4. تفعيل زر تسجيل الخروج (Sign Out)

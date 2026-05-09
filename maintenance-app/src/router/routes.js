@@ -169,6 +169,31 @@ export const routes = [
     },
 ];
 
+const defaultAllowedRoles = ["fleetmanager", "mechanic"];
+
+// Routes only mechanic can access (restricted view for mechanic role)
+const mechanicOnlyRoutes = new Set([
+    "/notifications",
+    "/spare-parts",
+    "/my-work-orders",
+]);
+
+// Routes that mechanic cannot access (fleetmanager only access)
+const fleetManagerOnlyRoutes = new Set([
+    "/",
+    "/work-orders",
+    "/work-orders/details",
+    "/work-orders/create",
+    "/vehicles",
+    "/vehicles/details",
+    "/technician-assignment",
+    "/fuel-efficiency",
+    "/alerts-inspections",
+    "/emergency-dispatch",
+    "/cost-to-value",
+    "/cost-to-value/details",
+]);
+
 export const notFoundRoute = {
     path: "/404",
     title: "Not Found",
@@ -179,6 +204,45 @@ export const notFoundRoute = {
         js: "/src/views/not-found/view.js",
     },
 };
+
+export function normalizeRole(role) {
+    return String(role ?? "")
+        .trim()
+        .toLowerCase();
+}
+
+export function getAllowedRolesForPath(pathname) {
+    const normalizedPath = normalizePath(pathname);
+
+    // If mechanic tries to access a fleetManagerOnly route, deny access
+    if (fleetManagerOnlyRoutes.has(normalizedPath)) {
+        return ["fleetmanager"];
+    }
+
+    // If fleetManager tries to access mechanicOnly routes, they can still access
+    // But mechanic can only access mechanicOnly routes
+    if (mechanicOnlyRoutes.has(normalizedPath)) {
+        return ["fleetmanager", "mechanic"];
+    }
+
+    // For all other routes (should not exist in this app)
+    return defaultAllowedRoles;
+}
+
+export function canAccessPath(pathname, role) {
+    const normalizedRole = normalizeRole(role);
+
+    if (!normalizedRole) {
+        return false;
+    }
+
+    // Check if role is allowed to login
+    if (!defaultAllowedRoles.includes(normalizedRole)) {
+        return false;
+    }
+
+    return getAllowedRolesForPath(pathname).includes(normalizedRole);
+}
 
 export function normalizePath(pathname) {
     if (!pathname || pathname === "/index.html") {
