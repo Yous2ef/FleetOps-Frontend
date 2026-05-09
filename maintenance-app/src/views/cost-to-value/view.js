@@ -164,11 +164,11 @@ function handleClick(e) {
 }
 
 // ─── Mount / Unmount ─────────────────────────────────────────────────────────
-export function mount(rootElement) {
+export async function mount(rootElement) {
     root = rootElement;
 
     try {
-        vehicles = CostToValueApi.getAllVehicles();
+        vehicles = await CostToValueApi.getAllVehicles();
         renderSummary();
         renderChart();
         renderTable();

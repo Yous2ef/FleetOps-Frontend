@@ -1,296 +1,51 @@
-import WorkOrdersApi from "./work-orders.js";
+import client, { unwrap } from "../api-client.js";
 
-const ASSIGNMENT_ENDPOINTS = [
-    "/assignments",
-    "/work-orders/assign",
-    "/work-orders/assignments",
-];
+const WO_BASE       = "/api/v1/maintenance/work-orders";
+const MECHANICS_URL = "/api/v1/users/role/mechanics";
 
-let cachedApiClient;
-
-async function getApiClient() {
-    if (cachedApiClient !== undefined) {
-        return cachedApiClient;
-    }
-
-    const candidatePaths = [
-        "/shared/api-handler.js",
-        "/Server/scripts/api-handler.js",
-    ];
-
-    for (const path of candidatePaths) {
-        try {
-            const module = await import(path);
-            const apiClient = module.default;
-            apiClient.setBaseURL("http://localhost:3000");
-            cachedApiClient = apiClient;
-            return cachedApiClient;
-        } catch (error) {
-            // Continue to the next candidate path and fall back to local data if needed.
-        }
-    }
-
-    cachedApiClient = null;
-    return cachedApiClient;
-}
-
-function formatDateLabel(value) {
-    if (!value) {
-        return "—";
-    }
-
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
-        return value;
-    }
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-        return String(value);
-    }
-
-    return date.toLocaleDateString("en-GB");
-}
-
-function getInitials(name) {
-    const parts = String(name ?? "")
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2);
-
-    if (!parts.length) {
-        return "NA";
-    }
-
-    return parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
-}
-
-function normalizeType(value) {
-    const normalized = String(value ?? "").toLowerCase();
-
-    if (normalized.includes("emerg")) {
-        return "Emergency";
-    }
-
-    if (normalized.includes("break")) {
-        return "Breakdown";
-    }
-
-    return "Routine";
-}
-
-function normalizePriority(value, type) {
-    const normalized = String(value ?? "").toLowerCase();
-
-    if (normalized.includes("urgent")) {
-        return "Urgent";
-    }
-
-    if (normalized.includes("emergency")) {
-        return "Urgent";
-    }
-
-    if (type === "Emergency") {
-        return "Urgent";
-    }
-
-    return "Normal";
-}
-
-function normalizeMechanicStatus(value) {
-    const normalized = String(value ?? "").trim().toLowerCase();
-
-    if (normalized.includes("off")) {
-        return "Off Duty";
-    }
-
-    if (normalized.includes("busy")) {
-        return "Busy";
-    }
-
-    return "Available";
-}
-
-function normalizeWorkOrder(rawOrder) {
-    const type = normalizeType(
-        rawOrder.type ?? rawOrder.orderType ?? rawOrder.category,
-    );
-
+function normalizeWorkOrder(raw) {
+    const typeMap = { routine: "Routine", emergency: "Emergency", breakdown: "Breakdown" };
+    const type    = typeMap[raw.type?.toLowerCase()] ?? raw.type ?? "Routine";
     return {
-        id: rawOrder.id ?? rawOrder.workOrderId ?? rawOrder.work_order_id ?? "WO-0000",
-        vehicle:
-            rawOrder.vehicle ??
-            rawOrder.vehiclePlate ??
-            rawOrder.plate ??
-            rawOrder.vehicleId ??
-            rawOrder.vehicle_id ??
-            "Unknown Vehicle",
-        date: formatDateLabel(
-            rawOrder.date ??
-                rawOrder.opened ??
-                rawOrder.createdAt ??
-                rawOrder.created_at ??
-                rawOrder.scheduledDate,
-        ),
+        id:          String(raw.work_order_id ?? raw.id ?? ""),
+        vehicle:     raw.vehicle?.VehicleLicense ?? raw.vehicle_plate ?? (raw.vehicle_id ? `#${raw.vehicle_id}` : "Unknown"),
+        date:        raw.opened_at ?? raw.created_at ?? "—",
         type,
-        priority: normalizePriority(rawOrder.priority, type),
-        description:
-            rawOrder.description ??
-            rawOrder.summary ??
-            rawOrder.notes ??
-            "No description provided.",
+        priority:    (raw.priority === "high" || raw.priority === "critical" || type === "Emergency") ? "Urgent" : "Normal",
+        description: raw.description ?? raw.notes ?? "No description provided.",
     };
 }
 
-function normalizeMechanic(rawMechanic, index = 0) {
-    const fallbackId = `MC-${String(index + 1).padStart(3, "0")}`;
-    const name =
-        rawMechanic.name ??
-        rawMechanic.fullName ??
-        rawMechanic.full_name ??
-        "Unknown Mechanic";
-    const activeJobsValue =
-        rawMechanic.activeJobs ??
-        rawMechanic.currentJobs ??
-        rawMechanic.jobCount ??
-        rawMechanic.active_jobs ??
-        0;
-
+function normalizeMechanic(raw) {
+    const name     = raw.name ?? raw.full_name ?? "Unknown";
+    const initials = name.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? "").slice(0, 2).join("");
     return {
-        id:
-            rawMechanic.id ??
-            rawMechanic.mechanicId ??
-            rawMechanic.mechanic_id ??
-            rawMechanic.code ??
-            fallbackId,
+        id:         raw.user_id ?? raw.id,
         name,
-        initials: rawMechanic.initials ?? getInitials(name),
-        specialty:
-            rawMechanic.specialty ??
-            rawMechanic.skill ??
-            rawMechanic.department ??
-            "General",
-        activeJobs: Number.isFinite(Number(activeJobsValue))
-            ? Number(activeJobsValue)
-            : 0,
-        status: normalizeMechanicStatus(
-            rawMechanic.status ??
-                rawMechanic.availability ??
-                rawMechanic.rosterStatus ??
-                rawMechanic.shiftStatus,
-        ),
+        initials,
+        specialty:  raw.specialty ?? raw.department ?? "General",
+        activeJobs: Number(raw.active_jobs ?? raw.activeJobs ?? 0),
+        status:     raw.is_active === false ? "Off Duty" : (raw.status ?? "Available"),
     };
-}
-
-function isUnassignedOrder(order) {
-    const mechanicName =
-        typeof order.mechanic === "string" ? order.mechanic : order.mechanic?.name;
-
-    return (
-        String(order.status ?? "").toLowerCase() === "open" &&
-        (!mechanicName || mechanicName === "Unassigned")
-    );
 }
 
 async function getUnassignedWorkOrders() {
-    try {
-        const apiClient = await getApiClient();
-
-        if (!apiClient) {
-            throw new Error("API handler unavailable.");
-        }
-
-        const response = await apiClient.get("/work-orders/unassigned");
-        const items = Array.isArray(response.data)
-            ? response.data
-            : response.data?.items ?? [];
-
-        return items.map(normalizeWorkOrder);
-    } catch (error) {
-        return WorkOrdersApi.getAllOrders()
-            .filter(isUnassignedOrder)
-            .map(normalizeWorkOrder);
-    }
+    const { data } = await client.get(`${WO_BASE}/open`);
+    return unwrap(data)
+        .filter((o) => !o.mechanic_id)
+        .map(normalizeWorkOrder);
 }
 
 async function getMechanicRoster() {
-    try {
-        const apiClient = await getApiClient();
-
-        if (!apiClient) {
-            throw new Error("API handler unavailable.");
-        }
-
-        const response = await apiClient.get("/mechanics/roster");
-        const items = Array.isArray(response.data)
-            ? response.data
-            : response.data?.items ?? [];
-
-        return items.map(normalizeMechanic);
-    } catch (error) {
-        const storedOrders = WorkOrdersApi.getAllOrders();
-
-        return WorkOrdersApi.getMechanics()
-            .filter((mechanic) => mechanic.name !== "Unassigned")
-            .map((mechanic, index) => {
-                const activeJobs = storedOrders.filter((order) => {
-                    const mechanicName =
-                        typeof order.mechanic === "string"
-                            ? order.mechanic
-                            : order.mechanic?.name;
-
-                    return (
-                        mechanicName === mechanic.name &&
-                        ["Assigned", "In Progress"].includes(order.status)
-                    );
-                }).length;
-
-                return normalizeMechanic(
-                    {
-                        ...mechanic,
-                        id: `MC-${String(index + 1).padStart(3, "0")}`,
-                        specialty: "General",
-                        status: activeJobs > 0 ? "Busy" : "Available",
-                        activeJobs,
-                    },
-                    index,
-                );
-            });
-    }
+    const { data } = await client.get(MECHANICS_URL);
+    return unwrap(data).map(normalizeMechanic);
 }
 
 async function assignWorkOrder(workOrderId, mechanicId) {
-    const payload = { workOrderId, mechanicId };
-    let lastError = null;
-    const apiClient = await getApiClient();
-
-    if (apiClient) {
-        for (const endpoint of ASSIGNMENT_ENDPOINTS) {
-            try {
-                const response = await apiClient.post(endpoint, payload);
-                return response.data;
-            } catch (error) {
-                lastError = error;
-
-                if (error?.status && ![404, 405].includes(error.status)) {
-                    throw error;
-                }
-            }
-        }
-    }
-
-    const mechanic = (await getMechanicRoster()).find((item) => item.id === mechanicId);
-
-    if (mechanic) {
-        if (mechanic.status === "Off Duty") {
-            throw new Error("Cannot assign to an off-duty mechanic.");
-        }
-        WorkOrdersApi.updateOrderMechanic(workOrderId, mechanic.name);
-        return { ok: true, fallback: true };
-    }
-
-    throw lastError ?? new Error("Unable to save assignment.");
+    const { data } = await client.post(`${WO_BASE}/${workOrderId}/assign`, {
+        mechanic_id: mechanicId,
+    });
+    return data;
 }
 
 const TechnicianAssignmentApi = {

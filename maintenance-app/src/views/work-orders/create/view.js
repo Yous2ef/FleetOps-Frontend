@@ -5,17 +5,22 @@ let attachedFiles = [];
 let cleanupFns = [];
 
 // ─── Populate vehicle select ─────────────────────────────────────────────────
-// ─── Populate vehicle select ─────────────────────────────────────────────────
-function populateVehicles() {
+async function populateVehicles() {
     const sel = document.getElementById("cwo-vehicle");
     if (!sel) return;
-    const vehicles = WorkOrdersApi.getVehicles();
-    vehicles.forEach(v => {
-        const opt = document.createElement("option");
-        opt.value = v.plate;
-        opt.textContent = `${v.plate} — ${v.category} — ${v.model} (${v.status})`;
-        sel.appendChild(opt);
-    });
+
+    try {
+        const vehicles = await WorkOrdersApi.getVehicles();
+        vehicles.forEach(v => {
+            const opt = document.createElement("option");
+            opt.value = v.plate;
+            opt.textContent = `${v.plate} — ${v.category} — ${v.model} (${v.status})`;
+            sel.appendChild(opt);
+        });
+    } catch {
+        // If API fails, leave the select with just the default empty option
+    }
+
     // Pre-select vehicle if passed via query string (e.g. from CTV details page)
     const preselect = new URLSearchParams(window.location.search).get("vehicle");
     if (preselect) sel.value = preselect;
@@ -172,14 +177,14 @@ function collectFormData(form) {
 
 // ─── Submit handler ──────────────────────────────────────────────────────────
 function initSubmit(form) {
-    const onSubmit = e => {
+    const onSubmit = async e => {
         e.preventDefault();
         if (!validateForm(form)) return;
 
         const data = collectFormData(form);
 
         try {
-            WorkOrdersApi.createOrder(data);
+            await WorkOrdersApi.createOrder(data);
             navigate("/work-orders");
         } catch (err) {
             alert("Failed to create work order. Please try again.");
@@ -196,12 +201,12 @@ function navigate(path) {
 }
 
 // ─── Mount / Unmount ─────────────────────────────────────────────────────────
-export function mount() {
+export async function mount() {
     cleanupFns = [];
     fileListCleanup = [];
-    attachedFiles = []; // reset on each mount
-    
-    populateVehicles();
+    attachedFiles = [];
+
+    await populateVehicles();
     initTypeCards();
     initPriorityPills();
     initDropzone();

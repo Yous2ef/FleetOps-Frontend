@@ -1,4 +1,5 @@
 import { normalizePath, notFoundRoute, routes } from "./routes.js";
+import { isAuthenticated, redirectToLogin } from "../services/auth.js";
 
 export function initRouter({ outletId }) {
     const outlet = document.getElementById(outletId);
@@ -13,6 +14,12 @@ export function initRouter({ outletId }) {
         const currentPath = normalizePath(window.location.pathname);
         const activeRoute =
             routes.find((route) => route.path === currentPath) ?? notFoundRoute;
+
+        // Auth guard — redirect to /login if not authenticated and route is not public
+        if (!activeRoute.public && !isAuthenticated()) {
+            redirectToLogin();
+            return;
+        }
 
         if (currentRouteModule?.unmount) {
             currentRouteModule.unmount(outlet);
@@ -42,6 +49,12 @@ export function initRouter({ outletId }) {
         document.title = activeRoute.title;
         outlet.innerHTML = html;
         document.getElementById("nav-title").textContent = activeRoute.title;
+
+        // Hide the app shell (sidebar + topbar) on public pages like /login
+        const shell = document.querySelector("[data-shell]");
+        if (shell) {
+            shell.classList.toggle("is-public-page", Boolean(activeRoute.public));
+        }
 
         const routeModule = await import(`${activeRoute.view.js}${cacheBuster}`);
         currentRouteModule = routeModule;

@@ -1,18 +1,8 @@
 import WorkOrdersApi from "../../../services/api/work-orders.js";
-import MyWorkOrdersApi from "../../../services/api/my-work-orders.js";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function queryParams() {
     return new URLSearchParams(window.location.search);
-}
-
-function getReturnPath() {
-    const params = queryParams();
-    const from = params.get("from");
-    if (from === "my-work-orders") {
-        return "/my-work-orders";
-    }
-    return "/work-orders";
 }
 
 function getVehicleByPlate(plate) {
@@ -333,20 +323,24 @@ function renderAssignmentBox(order) {
 }
 
 function initAssignmentEdit() {
-    const editBtn = document.getElementById("wod-reassign-btn");
+    const editBtn    = document.getElementById("wod-reassign-btn");
     const displayBox = document.getElementById("wod-assignment-display");
-    const editBox = document.getElementById("wod-assignment-edit");
-    const selectBox = document.getElementById("wod-mechanic-select");
-    const saveBtn = document.getElementById("wod-save-assign");
-    const cancelBtn = document.getElementById("wod-cancel-assign");
+    const editBox    = document.getElementById("wod-assignment-edit");
+    const selectBox  = document.getElementById("wod-mechanic-select");
+    const saveBtn    = document.getElementById("wod-save-assign");
+    const cancelBtn  = document.getElementById("wod-cancel-assign");
 
     if (!editBtn || !selectBox) return;
 
-    // Populate mechanics
-    const mechanics = WorkOrdersApi.getMechanics();
-    selectBox.innerHTML = mechanics.map(m => 
-        `<option value="${m.name === 'Unassigned' ? '' : m.name}">${m.name}</option>`
-    ).join("");
+    // Populate mechanics from API
+    WorkOrdersApi.getMechanics().then((mechanics) => {
+        selectBox.innerHTML = [
+            `<option value="">— Unassigned —</option>`,
+            ...mechanics.map((m) => `<option value="${m.id}">${m.name}</option>`),
+        ].join("");
+    }).catch(() => {
+        selectBox.innerHTML = `<option value="">— Unassigned —</option>`;
+    });
 
     const onEdit = () => {
         displayBox.style.display = "none";
@@ -365,18 +359,14 @@ function initAssignmentEdit() {
     cancelBtn.addEventListener("click", onCancel);
     cleanupFns.push(() => cancelBtn.removeEventListener("click", onCancel));
 
-    const onSave = () => {
+    const onSave = async () => {
         if (!currentOrder) return;
-        const success = WorkOrdersApi.updateOrderMechanic(currentOrder.id, selectBox.value);
-        
-        if (success) {
-            // Re-fetch to get updated state
-            currentOrder = WorkOrdersApi.getOrderById(currentOrder.id);
-            renderPage(currentOrder);
-        } else {
-            alert("Could not reassign work order. Please try again.");
+        const mechanicId = selectBox.value ? Number(selectBox.value) : null;
+        if (mechanicId) {
+            await WorkOrdersApi.assignMechanic(currentOrder.id, mechanicId);
         }
-
+        currentOrder = await WorkOrdersApi.getOrderById(currentOrder.id);
+        renderPage(currentOrder);
         displayBox.style.display = "block";
         editBox.style.display = "none";
     };
@@ -388,17 +378,11 @@ function initCloseOrder() {
     const closeBtn = document.getElementById("wod-close-btn");
     if (!closeBtn) return;
 
-    const onClose = () => {
+    const onClose = async () => {
         if (!currentOrder) return;
-        
-        const success = WorkOrdersApi.updateOrderStatus(currentOrder.id, "Closed");
-        if (success) {
-            // Re-fetch to get updated state
-            currentOrder = WorkOrdersApi.getOrderById(currentOrder.id);
-            renderPage(currentOrder);
-        } else {
-            alert("Could not close work order. Please try again.");
-        }
+        await WorkOrdersApi.updateOrderStatus(currentOrder.id, "Closed");
+        currentOrder = await WorkOrdersApi.getOrderById(currentOrder.id);
+        renderPage(currentOrder);
     };
 
     closeBtn.addEventListener("click", onClose);
@@ -407,29 +391,25 @@ function initCloseOrder() {
 
 // ─── Lifecycle ───────────────────────────────────────────────────────────────
 
-export function mount(container) {
+export async function mount(container) {
     cleanupFns = [];
     attachmentsCleanup = [];
-    
+
     const id = queryParams().get("id");
-    
+
     if (!id) {
         container.innerHTML = `<div style="padding: 40px; text-align: center;"><h2>No Order ID provided</h2><a href="/work-orders" data-link>Back to List</a></div>`;
         return;
     }
 
-    currentOrder = WorkOrdersApi.getOrderById(id) || MyWorkOrdersApi.getOrderById(id);
-    
+    currentOrder = await WorkOrdersApi.getOrderById(id);
+
     if (!currentOrder) {
-        container.innerHTML = `<div style="padding: 40px; text-align: center;"><h2>Order <span style="color:var(--color-primary)">${id}</span> not found</h2><p>It may have been deleted or does not exist.</p><a href="${getReturnPath()}" data-link>Back to List</a></div>`;
+        container.innerHTML = `<div style="padding: 40px; text-align: center;"><h2>Order <span style="color:var(--color-primary)">${id}</span> not found</h2><p>It may have been deleted or does not exist.</p><a href="/work-orders" data-link>Back to List</a></div>`;
         return;
     }
 
     renderPage(currentOrder);
-    const backLink = document.getElementById("wod-back-link");
-    if (backLink) {
-        backLink.href = getReturnPath();
-    }
     initAssignmentEdit();
     initCloseOrder();
 }

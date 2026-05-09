@@ -1,4 +1,5 @@
 import { initRouter } from "./router/router.js";
+import { getUser, clearAuth, isAuthenticated } from "./services/auth.js";
 import {
     createIcons,
     icons,
@@ -7,10 +8,31 @@ import {
 initRouter({ outletId: "app-content" });
 createIcons({ icons });
 
-
 window.addEventListener("route:changed", () => {
     createIcons({ icons });
+    updateTopbarUser();
 });
+
+initDashboardShell();
+updateTopbarUser();
+
+function updateTopbarUser() {
+    if (!isAuthenticated()) return;
+    const user = getUser();
+    if (!user) return;
+
+    const avatarEl = document.querySelector(".topbar-user__avatar");
+    const nameEl   = document.querySelector(".topbar-user__meta strong");
+    const roleEl   = document.querySelector(".topbar-user__meta span");
+
+    if (avatarEl) {
+        const initials = (user.name ?? "")
+            .trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? "").slice(0, 2).join("");
+        avatarEl.textContent = initials || "?";
+    }
+    if (nameEl) nameEl.textContent = user.name ?? "User";
+    if (roleEl) roleEl.textContent = user.role ?? "";
+}
 
 
 
@@ -21,6 +43,7 @@ function initDashboardShell() {
     const collapseBtn = document.getElementById("sidebar-collapse-btn");
     const mobileBtn = document.getElementById("sidebar-mobile-btn");
     const collapseStateKey = "maintenance-app:sidebar-collapsed";
+    const signOutBtn = document.querySelector(".sidebar-signout");
 
     if (!shell) {
         return;
@@ -46,6 +69,12 @@ function initDashboardShell() {
 
     window.addEventListener("route:changed", () => {
         shell.classList.remove("is-sidebar-open");
+    });
+
+    signOutBtn?.addEventListener("click", () => {
+        clearAuth();
+        window.history.replaceState({}, "", "/login");
+        window.dispatchEvent(new PopStateEvent("popstate"));
     });
 }
 

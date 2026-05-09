@@ -54,8 +54,7 @@ function viewEyeIcon() {
 
 // ─── Filter ───────────────────────────────────────────────────────────────────
 
-function filteredOrders() {
-    const allOrders = WorkOrdersApi.getAllOrders();
+function filteredOrders(allOrders) {
     const q = state.search.trim().toLowerCase();
     return allOrders.filter(o => {
         const mechanicName = typeof o.mechanic === "object" ? o.mechanic.name : o.mechanic;
@@ -70,6 +69,7 @@ function filteredOrders() {
 // ─── Render ───────────────────────────────────────────────────────────────────
 
 let cleanupFns = [];
+let allOrders  = [];   // holds the last fetched list for filter/pagination
 
 function renderTable() {
     const tbody = document.getElementById("wo-tbody");
@@ -77,12 +77,11 @@ function renderTable() {
     const total = document.getElementById("wo-total-label");
     if (!tbody) return;
 
-    const allOrders = WorkOrdersApi.getAllOrders();
-    const orders    = filteredOrders();
-    const totalN    = orders.length;
-    const start     = (state.page - 1) * PAGE_SIZE;
-    const end       = Math.min(start + PAGE_SIZE, totalN);
-    const pageRows  = orders.slice(start, end);
+    const orders = filteredOrders(allOrders);
+    const totalN = orders.length;
+    const start  = (state.page - 1) * PAGE_SIZE;
+    const end    = Math.min(start + PAGE_SIZE, totalN);
+    const pageRows = orders.slice(start, end);
 
     if (label) label.textContent = totalN === 0
         ? "No results found"
@@ -96,10 +95,8 @@ function renderTable() {
         return;
     }
 
-    tbody.innerHTML = pageRows.map((o, idx) => {
-        const isNew = o._source === "local" || o._source === "remote";
-        return `
-        <tr${isNew && o._source === "local" ? ' style="background:rgba(231, 171, 153, 0.04)"' : ''}>
+    tbody.innerHTML = pageRows.map((o) => `
+        <tr>
             <td class="wo-td wo-td--check"><input type="checkbox" aria-label="Select ${o.id}" /></td>
             <td class="wo-td wo-td--id">${o.id}</td>
             <td class="wo-td">${o.vehicle}</td>
@@ -116,8 +113,7 @@ function renderTable() {
                     ${viewEyeIcon()} View
                 </a>
             </td>
-        </tr>`;
-    }).join("");
+        </tr>`).join("");
 
     renderPagination(totalN, state.page);
 }
@@ -168,45 +164,34 @@ function renderPagination(total, current) {
 
 // ─── Mount ────────────────────────────────────────────────────────────────────
 
-let mountedCleanup = []; // Additional cleanup for listeners added in mount()
+let mountedCleanup = [];
 
-export function mount() {
-    // Reset filters on each mount so returning from the create form starts fresh
+export async function mount() {
     state = { search: "", status: "", type: "", page: 1 };
     cleanupFns = [];
     mountedCleanup = [];
+    allOrders = [];
 
+    allOrders = await WorkOrdersApi.getAllOrders();
     renderTable();
 
     const searchInput = document.getElementById("wo-search-input");
     if (searchInput) {
-        const handler = e => {
-            state.search = e.target.value;
-            state.page   = 1;
-            renderTable();
-        };
+        const handler = e => { state.search = e.target.value; state.page = 1; renderTable(); };
         searchInput.addEventListener("input", handler);
         mountedCleanup.push(() => searchInput.removeEventListener("input", handler));
     }
 
     const statusFilter = document.getElementById("wo-status-filter");
     if (statusFilter) {
-        const handler = e => {
-            state.status = e.target.value;
-            state.page   = 1;
-            renderTable();
-        };
+        const handler = e => { state.status = e.target.value; state.page = 1; renderTable(); };
         statusFilter.addEventListener("change", handler);
         mountedCleanup.push(() => statusFilter.removeEventListener("change", handler));
     }
 
     const typeFilter = document.getElementById("wo-type-filter");
     if (typeFilter) {
-        const handler = e => {
-            state.type = e.target.value;
-            state.page = 1;
-            renderTable();
-        };
+        const handler = e => { state.type = e.target.value; state.page = 1; renderTable(); };
         typeFilter.addEventListener("change", handler);
         mountedCleanup.push(() => typeFilter.removeEventListener("change", handler));
     }
@@ -225,7 +210,9 @@ export function mount() {
 export function unmount() {
     cleanupFns.forEach(fn => fn && fn());
     cleanupFns = [];
-    
+
     mountedCleanup.forEach(fn => fn && fn());
     mountedCleanup = [];
+
+    allOrders = [];
 }

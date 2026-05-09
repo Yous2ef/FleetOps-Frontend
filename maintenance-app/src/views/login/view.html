@@ -1,0 +1,49 @@
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-card__brand">
+            <div class="login-card__icon">
+                <i data-lucide="truck"></i>
+            </div>
+            <div>
+                <h1 class="login-card__title">FleetOps</h1>
+                <p class="login-card__subtitle">Maintenance Portal</p>
+            </div>
+        </div>
+
+        <form id="login-form" class="login-form" novalidate>
+            <div class="login-form__field">
+                <label class="login-form__label" for="login-email">Email</label>
+                <input
+                    id="login-email"
+                    name="email"
+                    type="email"
+                    class="login-form__input"
+                    placeholder="you@fleetops.com"
+                    autocomplete="email"
+                    required
+                />
+                <span class="login-form__error" id="login-email-error"></span>
+            </div>
+
+            <div class="login-form__field">
+                <label class="login-form__label" for="login-password">Password</label>
+                <input
+                    id="login-password"
+                    name="password"
+                    type="password"
+                    class="login-form__input"
+                    placeholder="••••••••"
+                    autocomplete="current-password"
+                    required
+                />
+                <span class="login-form__error" id="login-password-error"></span>
+            </div>
+
+            <p class="login-form__error login-form__error--global" id="login-global-error"></p>
+
+            <button type="submit" class="login-form__submit" id="login-submit-btn">
+                Sign In
+            </button>
+        </form>
+    </div>
+</div>

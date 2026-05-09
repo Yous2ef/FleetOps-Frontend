@@ -740,11 +740,14 @@ export async function mount(rootElement) {
     root = rootElement;
 
     try {
-        const fuelState = await FuelApi.getFuelState();
+        const [fuelState, vehicles] = await Promise.all([
+            FuelApi.getFuelState(),
+            WorkOrdersApi.getVehicles(),
+        ]);
 
         appState.records = fuelState.records;
         appState.invoices = fuelState.invoices;
-        appState.vehicles = WorkOrdersApi.getVehicles();
+        appState.vehicles = vehicles;
         appState.customPeriod = getLatestPeriod();
         appState.activeTab = "audit";
 
