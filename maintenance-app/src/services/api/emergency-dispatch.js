@@ -48,8 +48,8 @@ function shapeIncidents(raw) {
             type: r.vehicle?.VehicleType || 'Truck',
         },
         driver: {
-            name: r.driver?.DriverName || r.driver?.name || 'Unknown Driver',
-            phone: r.driver?.phone_no || 'N/A'
+            name: r.driver?.user?.name || r.driver?.DriverName || r.driver?.name || 'Unknown Driver',
+            phone: r.driver?.user?.phone_no || r.driver?.phone_no || 'N/A'
         },
         location: {
             address: r.location || 'Unknown Location',
