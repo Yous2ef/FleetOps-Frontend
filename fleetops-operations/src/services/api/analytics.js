@@ -160,14 +160,19 @@ async function getFuelAuditData() {
     const response = await api.get("/api/v1/analytics/analytics-fuel-audit");
     return response.data.data.vehicles.map((v) => {
       const expected = v.expected_fuel;
-      const actual = v.actual_invoice; // Wait, actual is invoice. The backend returns actual_invoice. Wait, KpiService actually computes actual_invoice. But actual_litres is not in the row. Let's just use expected and actual.
+      const actualLitres = v.actual_litres;
+      const actualInvoice = v.actual_invoice;
+
       const discrepancy =
-        expected > 0 ? (((actual - expected) / expected) * 100).toFixed(1) : 0;
+        expected > 0
+          ? (((actualLitres - expected) / expected) * 100).toFixed(1)
+          : 0;
+
       return {
         vehicle: v.license,
         gpsDistance: v.gps_distance + " km",
         expected: expected + " L",
-        actual: actual + " L",
+        actual: actualInvoice,
         discrepancy: discrepancy + "%",
         status: v.status === "flagged" ? "Flagged" : "OK",
         subtext:

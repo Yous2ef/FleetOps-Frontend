@@ -581,6 +581,8 @@ async function renderMaintenanceCost(root) {
     return;
   }
 
+  const currency = data.summary.currency || "EGP";
+
   tbody.innerHTML = data.table
     .map((row) => {
       const statusClass =
@@ -590,9 +592,9 @@ async function renderMaintenanceCost(root) {
         <td><strong>${row.vehicle}</strong></td>
         <td>${row.service}</td>
         <td>${row.date}</td>
-        <td>$${row.parts}</td>
-        <td>$${row.labor}</td>
-        <td><strong>$${row.total}</strong></td>
+        <td>${row.parts} ${currency}</td>
+        <td>${row.labor} ${currency}</td>
+        <td><strong>${row.total} ${currency}</strong></td>
         <td><span class="status-badge ${statusClass}">${row.status}</span></td>
       </tr>
     `;
