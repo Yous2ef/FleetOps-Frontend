@@ -1,4 +1,5 @@
 import api from "/shared/api-handler.js";
+import { saveCo2ReportData } from "../storage/co2ReportData.js";
 
 api.setBaseURL("http://localhost:8000");
 
@@ -57,40 +58,32 @@ async function getMonthlyChartData() {
       },
     );
 
-    if (response.status === 204) {
-      console.warn("Monthly chart API returned 204 No Content.");
-      return { labels: [], revenue: [], costs: [], profit: [] };
-    }
-
-    if (!response || !response.data) {
-      console.warn("Monthly chart API response is missing data.");
-      return { labels: [], revenue: [], costs: [], profit: [] };
+    if (response.status === 204 || !response?.data?.data) {
+      return { labels: [], revenue: [], loss: [], profit: [], currency: "EGP" };
     }
 
     const payload = response.data.data;
-    if (!payload || typeof payload !== "object") {
-      console.warn("Monthly chart API returned unexpected payload.");
-      return { labels: [], revenue: [], costs: [], profit: [] };
-    }
 
     const labels = Array.isArray(payload.labels) ? payload.labels : [];
-    const revenue = Array.isArray(payload.revenue)
-      ? payload.revenue
-      : Array.isArray(payload.data)
-        ? payload.data
-        : [];
-    const costs = Array.isArray(payload.costs)
-      ? payload.costs
-      : Array(labels.length).fill(0);
-    const profit = revenue.map((value, index) => {
-      const cost = costs[index] || 0;
-      return value - cost;
+    const revenue = Array.isArray(payload.revenue) ? payload.revenue : [];
+    const loss = Array.isArray(payload.loss) ? payload.loss : [];
+
+    // Calculate profit
+    const profit = revenue.map((rev, i) => {
+      const los = loss[i] || 0;
+      return rev - los;
     });
 
-    return { labels, revenue, costs, profit, currency: payload.currency || "" };
+    return {
+      labels,
+      revenue,
+      loss,
+      profit,
+      currency: payload.currency || "EGP",
+    };
   } catch (e) {
     console.error("Failed to fetch chart data", e);
-    return { labels: [], revenue: [], costs: [], profit: [] };
+    return { labels: [], revenue: [], loss: [], profit: [], currency: "EGP" };
   }
 }
 
@@ -139,13 +132,23 @@ async function getDriverPerformance() {
 async function getCO2ReportData() {
   try {
     const response = await api.get("/api/v1/analytics/kpis/co2-report");
-    return response.data.data.vehicles.map((v) => ({
-      vehicle: v.vehicle,
-      type: v.type,
-      emissions: v.emissions_tons,
-      reduction: parseFloat(v.reduction_vs_last_month) || 0,
-      status: v.status,
+    const payload = response.data?.data ?? response.data;
+    const rows = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.vehicles)
+        ? payload.vehicles
+        : [];
+
+    const record = rows.map((v) => ({
+      vehicle: v.vehicle || v.Vehicle || v.license || v.vehicle_id || "",
+      type: v.type || v.Type || "",
+      emissions: v.emissions_tons || v.emissions || 0,
+      reduction: parseFloat(v.reduction_vs_last_month || v.reduction || 0) || 0,
+      status: v.status || v.Status || "Unknown",
     }));
+
+    saveCo2ReportData(record);
+    return record;
   } catch (e) {
     console.error("Failed to fetch CO2 report", e);
     return [];
@@ -157,14 +160,19 @@ async function getFuelAuditData() {
     const response = await api.get("/api/v1/analytics/analytics-fuel-audit");
     return response.data.data.vehicles.map((v) => {
       const expected = v.expected_fuel;
-      const actual = v.actual_invoice; // Wait, actual is invoice. The backend returns actual_invoice. Wait, KpiService actually computes actual_invoice. But actual_litres is not in the row. Let's just use expected and actual.
+      const actualLitres = v.actual_litres;
+      const actualInvoice = v.actual_invoice;
+
       const discrepancy =
-        expected > 0 ? (((actual - expected) / expected) * 100).toFixed(1) : 0;
+        expected > 0
+          ? (((actualLitres - expected) / expected) * 100).toFixed(1)
+          : 0;
+
       return {
         vehicle: v.license,
         gpsDistance: v.gps_distance + " km",
         expected: expected + " L",
-        actual: actual + " L",
+        actual: actualInvoice,
         discrepancy: discrepancy + "%",
         status: v.status === "flagged" ? "Flagged" : "OK",
         subtext:
@@ -184,46 +192,54 @@ async function getMaintenanceCostData() {
     const response = await api.get(
       "/api/v1/analytics/analytics-maintenance-cost",
     );
-    const d = response.data.data;
 
-    if (!d || Array.isArray(d) || typeof d !== "object") {
+    const payload = response.data?.data ?? response.data;
+    const vehicles = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.vehicles)
+          ? payload.vehicles
+          : [];
+
+    const summaryData = payload?.summary;
+    const preventiveValue = summaryData?.preventive?.value || 0;
+    const reactiveValue = summaryData?.reactive?.value || 0;
+    const total =
+      preventiveValue + reactiveValue ||
+      vehicles.reduce((sum, v) => sum + (v.total_cost || 0), 0);
+
+    if (!Array.isArray(vehicles) || vehicles.length === 0) {
       console.warn(
-        "Maintenance cost API returned an array instead of the expected object. Rendering empty maintenance cost state.",
+        "Maintenance cost API returned unexpected data shape. Expected array of vehicles.",
       );
       return {
-        summary: { total: 0, preventive: 0, reactive: 0, currency: "EGP" },
-        table: [],
-      };
-    }
-
-    if (!d || typeof d !== "object") {
-      console.warn(
-        "Maintenance cost API returned unexpected data shape. Rendering empty maintenance cost state.",
-      );
-      return {
-        summary: { total: 0, preventive: 0, reactive: 0, currency: "EGP" },
+        summary: {
+          total,
+          preventive: preventiveValue,
+          reactive: reactiveValue,
+          currency: "EGP",
+        },
         table: [],
       };
     }
 
     return {
       summary: {
-        total: d.grand_total || 0,
-        preventive: d.total_preventive || 0,
-        reactive: d.total_reactive || 0,
+        total,
+        preventive: preventiveValue,
+        reactive: reactiveValue,
         currency: "EGP",
       },
-      table: Array.isArray(d.top_vehicles)
-        ? d.top_vehicles.map((v) => ({
-            vehicle: v.VehicleLicense,
-            service: v.VehicleType,
-            date: "N/A", // the endpoint groups by vehicle, doesn't give date per vehicle easily
-            parts: v.total_cost / 2, // mock splitting
-            labor: v.total_cost / 2, // mock splitting
-            total: v.total_cost,
-            status: "Completed",
-          }))
-        : [],
+      table: vehicles.map((v) => ({
+        vehicle: v.vehicle_license || v.vehicle_id || v.license || "",
+        service: v.vehicle_model || v.VehicleType || "",
+        date: v.date || "N/A",
+        parts: (v.total_cost || 0) / 2,
+        labor: (v.total_cost || 0) / 2,
+        total: v.total_cost || 0,
+        status: v.status || "Completed",
+      })),
     };
   } catch (e) {
     console.error("Failed to fetch maintenance cost", e);

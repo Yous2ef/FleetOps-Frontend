@@ -4,6 +4,31 @@ import {
   icons,
 } from "../../../../node_modules/lucide/dist/esm/lucide.mjs";
 import { settingsMockData } from "../../services/storage/settings.js";
+import { getStoredCo2ReportData } from "../../services/storage/co2ReportData.js";
+
+const defaultCo2ReportMockData = [
+  {
+    vehicle: "أ ب ج 1001",
+    type: "Diesel",
+    emissions: 8.4,
+    reduction: 4.2,
+    status: "Good",
+  },
+  {
+    vehicle: "أ ب ج 1002",
+    type: "Electric",
+    emissions: 1.2,
+    reduction: 12.7,
+    status: "Excellent",
+  },
+  {
+    vehicle: "أ ب ج 1003",
+    type: "Hybrid",
+    emissions: 4.9,
+    reduction: -1.5,
+    status: "Poor",
+  },
+];
 
 let exportButton = null;
 let exportHandler = null;
@@ -50,15 +75,87 @@ export function mount(root) {
     });
   });
 
-  exportButton = root.querySelector("#routes-export-btn");
-  exportHandler = () => handleExport(root);
-  exportButton?.addEventListener("click", exportHandler);
+  if (window.location.pathname === "/analytics") {
+    exportButton = root.querySelector(
+      "#routes-export-btn, #export-btn, .export-button",
+    );
+    exportHandler = (event) => {
+      event.preventDefault();
+      handleExport(root);
+    };
+    exportButton?.addEventListener("click", exportHandler);
+  }
 }
 
 export function unmount() {
   exportButton?.removeEventListener("click", exportHandler);
   exportButton = null;
   exportHandler = null;
+}
+
+function getActiveAnalyticsTab(root) {
+  const activeTabBtn = root.querySelector(".tab-btn.active");
+  return activeTabBtn?.dataset.tab || "kpi";
+}
+
+function printKPISection(root) {
+  const kpiSection = root.querySelector("#analytics-kpi-grid");
+  if (!kpiSection) return;
+
+  const printWindow = window.open("", "_blank", "width=900,height=700");
+  if (!printWindow) return;
+
+  const styles = `
+    <style>
+      :root {
+        --color-primary: #f46639;
+        --font-family-display: 'Plus Jakarta Sans', sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: var(--font-family-display);
+        color: #111;
+        background: #fff;
+      }
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+      }
+      .kpi-card {
+        border-radius: 16px;
+        padding: 20px;
+        background: #fff;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+        border: 1px solid rgba(15, 23, 42, 0.04);
+      }
+      .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .kpi-value {
+        font-size: 2rem;
+        font-weight: 700;
+      }
+      .kpi-change.positive {
+        color: #10b981;
+      }
+      .kpi-change.negative {
+        color: #ef4444;
+      }
+    </style>
+  `;
+
+  printWindow.document.write(
+    `<!doctype html><html><head><title>Analytics KPI</title>${styles}</head><body>${kpiSection.innerHTML}</body></html>`,
+  );
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+  printWindow.close();
 }
 
 window.__refreshIcons = () => createIcons({ icons });
@@ -75,162 +172,134 @@ function buildCsvRow(values) {
   return values.map(csvEscape).join(",");
 }
 
+function downloadCsv(rows, fileName) {
+  const csv = rows.map(buildCsvRow).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 async function handleExport(root) {
+  const activeTab = getActiveAnalyticsTab(root);
   const range =
     root.querySelector(".date-btn.is-active")?.dataset.range || "30d";
 
+  if (activeTab === "kpi") {
+    printKPISection(root);
+    return;
+  }
+
   try {
-    const [
-      kpiData,
-      chartData,
-      fleetData,
-      driverData,
-      co2Data,
-      fuelData,
-      maintenanceData,
-    ] = await Promise.all([
-      AnalyticsStorage.getKpiData(range),
-      AnalyticsStorage.getMonthlyChartData(),
-      AnalyticsStorage.getFleetStatus(),
-      AnalyticsStorage.getDriverPerformance(),
-      AnalyticsStorage.getCO2ReportData(),
-      AnalyticsStorage.getFuelAuditData(),
-      AnalyticsStorage.getMaintenanceCostData(),
-    ]);
+    const [fleetData, driverData, co2Data, fuelData, maintenanceData] =
+      await Promise.all([
+        AnalyticsStorage.getFleetStatus(),
+        AnalyticsStorage.getDriverPerformance(),
+        AnalyticsStorage.getCO2ReportData(),
+        AnalyticsStorage.getFuelAuditData(),
+        AnalyticsStorage.getMaintenanceCostData(),
+      ]);
 
     const rows = [];
-    rows.push(["Analytics Export"]);
-    rows.push([`Range: ${range}`]);
-    rows.push([]);
+    let fileName = `analytics-${activeTab}-${range}.csv`;
 
-    if (kpiData.length > 0) {
-      rows.push(["KPIs"]);
-      rows.push(["Label", "Value", "Change"]);
-      kpiData.forEach((kpi) =>
-        rows.push([kpi.label, kpi.value, `${kpi.change}%`]),
-      );
-      rows.push([]);
-    }
-
-    if (chartData?.labels?.length > 0) {
-      rows.push(["Monthly Chart"]);
-      rows.push(["Month", "Revenue", "Cost", "Profit"]);
-      chartData.labels.forEach((label, index) => {
-        const revenue = chartData.revenue?.[index] ?? "";
-        const cost = chartData.costs?.[index] ?? "";
-        const profit =
-          typeof revenue === "number" && typeof cost === "number"
-            ? revenue - cost
-            : "";
-        rows.push([label, revenue, cost, profit]);
-      });
-      rows.push([]);
-    }
-
-    if (fleetData.length > 0) {
-      rows.push(["Fleet Status"]);
-      rows.push(["Label", "Count"]);
-      fleetData.forEach((item) => rows.push([item.label, item.count]));
-      rows.push([]);
-    }
-
-    if (driverData.length > 0) {
-      rows.push(["Driver Performance"]);
-      rows.push(["Driver", "Speed", "Fuel", "Rating", "Score"]);
-      driverData.forEach((driver) =>
+    switch (activeTab) {
+      case "driver":
+        rows.push(["Driver Performance"]);
+        rows.push(["Rank", "Driver", "Speed", "Fuel", "Rating", "Score"]);
+        driverData.forEach((driver, index) =>
+          rows.push([
+            `#${index + 1}`,
+            driver.name,
+            `${driver.speed}%`,
+            `${driver.fuel}%`,
+            driver.rating,
+            driver.score,
+          ]),
+        );
+        break;
+      case "fleet":
+        rows.push(["Fleet Utilization"]);
+        rows.push(["Label", "Count"]);
+        fleetData.forEach((item) => rows.push([item.label, item.count]));
+        break;
+      case "co2":
+        rows.push(["CO2 Report"]);
+        rows.push(["Vehicle", "Type", "Emissions", "Reduction", "Status"]);
+        co2Data.forEach((row) =>
+          rows.push([
+            row.vehicle,
+            row.type,
+            row.emissions,
+            `${row.reduction}%`,
+            row.status,
+          ]),
+        );
+        break;
+      case "fuel":
+        rows.push(["Fuel Audit"]);
         rows.push([
-          driver.name,
-          `${driver.speed}%`,
-          `${driver.fuel}%`,
-          driver.rating,
-          driver.score,
-        ]),
-      );
-      rows.push([]);
-    }
-
-    if (co2Data.length > 0) {
-      rows.push(["CO2 Report"]);
-      rows.push(["Vehicle", "Type", "Emissions", "Reduction", "Status"]);
-      co2Data.forEach((row) =>
+          "Vehicle",
+          "GPS Distance",
+          "Expected",
+          "Actual",
+          "Discrepancy",
+          "Status",
+        ]);
+        fuelData.forEach((row) =>
+          rows.push([
+            row.vehicle,
+            row.gpsDistance,
+            row.expected,
+            row.actual,
+            row.discrepancy,
+            row.status,
+          ]),
+        );
+        break;
+      case "maintenance":
+        rows.push(["Maintenance Cost Summary"]);
+        rows.push(["Total", "Preventive", "Reactive", "Currency"]);
         rows.push([
-          row.vehicle,
-          row.type,
-          row.emissions,
-          `${row.reduction}%`,
-          row.status,
-        ]),
-      );
-      rows.push([]);
-    }
-
-    if (fuelData.length > 0) {
-      rows.push(["Fuel Audit"]);
-      rows.push([
-        "Vehicle",
-        "GPS Distance",
-        "Expected",
-        "Actual",
-        "Discrepancy",
-        "Status",
-      ]);
-      fuelData.forEach((row) =>
+          maintenanceData.summary.total,
+          maintenanceData.summary.preventive,
+          maintenanceData.summary.reactive,
+          maintenanceData.summary.currency,
+        ]);
+        rows.push([]);
+        rows.push(["Maintenance Cost Table"]);
         rows.push([
-          row.vehicle,
-          row.gpsDistance,
-          row.expected,
-          row.actual,
-          row.discrepancy,
-          row.status,
-        ]),
-      );
-      rows.push([]);
+          "Vehicle",
+          "Service",
+          "Date",
+          "Parts",
+          "Labor",
+          "Total",
+          "Status",
+        ]);
+        (maintenanceData.table || []).forEach((row) =>
+          rows.push([
+            row.vehicle,
+            row.service,
+            row.date,
+            row.parts,
+            row.labor,
+            row.total,
+            row.status,
+          ]),
+        );
+        break;
+      default:
+        rows.push(["No export data available for this tab."]);
+        break;
     }
 
-    if (maintenanceData?.summary) {
-      rows.push(["Maintenance Cost Summary"]);
-      rows.push(["Total", "Preventive", "Reactive", "Currency"]);
-      rows.push([
-        maintenanceData.summary.total,
-        maintenanceData.summary.preventive,
-        maintenanceData.summary.reactive,
-        maintenanceData.summary.currency,
-      ]);
-      rows.push([]);
-      rows.push(["Maintenance Cost Table"]);
-      rows.push([
-        "Vehicle",
-        "Service",
-        "Date",
-        "Parts",
-        "Labor",
-        "Total",
-        "Status",
-      ]);
-      (maintenanceData.table || []).forEach((row) =>
-        rows.push([
-          row.vehicle,
-          row.service,
-          row.date,
-          row.parts,
-          row.labor,
-          row.total,
-          row.status,
-        ]),
-      );
-      rows.push([]);
-    }
-
-    const csv = rows.map(buildCsvRow).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `analytics-export-${range}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadCsv(rows, fileName);
   } catch (error) {
     console.error("Analytics export failed:", error);
   }
@@ -269,40 +338,73 @@ async function renderMonthlyChart(root) {
   if (!container) return;
 
   const data = await AnalyticsStorage.getMonthlyChartData();
-  if (!data.revenue || data.revenue.length === 0) return;
 
-  const maxVal = Math.max(...data.revenue);
+  if (!data.labels || data.labels.length === 0) {
+    container.innerHTML = `<div class="empty-state">No monthly data available</div>`;
+    return;
+  }
+
+  const maxVal =
+    Math.max(
+      ...data.revenue,
+      ...data.loss.map(Math.abs),
+      ...data.profit.map(Math.abs),
+    ) || 1;
 
   container.innerHTML = data.labels
     .map((label, i) => {
-      const revenue = data.revenue[i];
-      const cost = data.costs[i];
-      const revHeight = maxVal > 0 ? (revenue / maxVal) * 100 : 0;
-      const costHeight = maxVal > 0 ? (cost / maxVal) * 100 : 0;
+      const revenue = data.revenue[i] || 0;
+      const loss = data.loss[i] || 0;
+      const profit = data.profit[i] || 0;
 
-      const profit = revenue - cost;
-      const profitPercentage =
-        revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : 0;
+      const revHeight = (revenue / maxVal) * 100;
+      const lossHeight = (loss / maxVal) * 100;
+      const profitHeight = (Math.abs(profit) / maxVal) * 100;
+
       const isProfit = profit >= 0;
-      const colorClass = isProfit ? "profit-green" : "loss-red";
+      const changeClass = isProfit ? "profit-green" : "loss-red";
       const sign = isProfit ? "+" : "";
 
       return `
-      <div class="bar-group">
-        <div class="bars">
-          <div class="bar bar-revenue" style="height: ${revHeight}%;" title="Revenue: $${revenue.toLocaleString()}"></div>
-          <div class="bar bar-cost" style="height: ${costHeight}%;" title="Cost: $${cost.toLocaleString()}"></div>
+        <div class="bar-group">
+          <div class="bars" style="position: relative; height: 240px;">
+            
+            <!-- Revenue Bar -->
+            <div class="bar bar-revenue" 
+                style="height: ${revHeight}%; background: #10b981;"
+                title="Revenue: ${data.currency} ${revenue.toLocaleString()}">
+            </div>
+
+            <!-- Loss Bar (from bottom) -->
+            <div class="bar bar-loss" 
+                style="height: ${lossHeight}%; background: #ef4444; position: absolute; bottom: 0;"
+                title="Loss: ${data.currency} ${loss.toLocaleString()}">
+            </div>
+
+            <!-- Profit Indicator -->
+            <div class="bar bar-profit ${isProfit ? "profit-green" : "loss-red"}" 
+                style="height: ${profitHeight}%; 
+                        ${isProfit ? "bottom: " + lossHeight + "%;" : "bottom: 0;"};"
+                title="${isProfit ? "Profit" : "Loss"}: ${data.currency} ${Math.abs(profit).toLocaleString()}">
+            </div>
+          </div>
+
+          <span class="bar-label">${label}</span>
+          
+          <!-- Profit/Loss Change -->
+          <div class="bar-change ${changeClass}">
+            ${sign}${profit.toLocaleString()} ${data.currency}
+            <span class="change-perc">
+              (${sign}${(revenue > 0 ? (profit / revenue) * 100 : 0).toFixed(1)}%)
+            </span>
+          </div>
         </div>
-        <span class="bar-label">${label}</span>
-        <span class="bar-profit ${colorClass}">${sign}${profitPercentage}%</span>
-      </div>
-    `;
+      `;
     })
     .join("");
 
   refreshIcons();
 }
-
 async function renderFleetStatus(root) {
   const donut = root.querySelector("#fleet-donut");
   const legend = root.querySelector("#fleet-legend");
@@ -386,15 +488,9 @@ async function renderCO2Report(root) {
   const tbody = root.querySelector("#co2-tbody");
   if (!tbody) return;
 
-  const data = await AnalyticsStorage.getCO2ReportData();
-
+  let data = getStoredCo2ReportData();
   if (!Array.isArray(data) || data.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="5" class="empty-state">No CO2 report data found for this period.</td>
-      </tr>
-    `;
-    return;
+    data = defaultCo2ReportMockData;
   }
 
   tbody.innerHTML = data
@@ -485,6 +581,8 @@ async function renderMaintenanceCost(root) {
     return;
   }
 
+  const currency = data.summary.currency || "EGP";
+
   tbody.innerHTML = data.table
     .map((row) => {
       const statusClass =
@@ -494,9 +592,9 @@ async function renderMaintenanceCost(root) {
         <td><strong>${row.vehicle}</strong></td>
         <td>${row.service}</td>
         <td>${row.date}</td>
-        <td>$${row.parts}</td>
-        <td>$${row.labor}</td>
-        <td><strong>$${row.total}</strong></td>
+        <td>${row.parts} ${currency}</td>
+        <td>${row.labor} ${currency}</td>
+        <td><strong>${row.total} ${currency}</strong></td>
         <td><span class="status-badge ${statusClass}">${row.status}</span></td>
       </tr>
     `;
