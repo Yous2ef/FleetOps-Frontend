@@ -1,26 +1,40 @@
 // ════════════════════════════════════════════════════════════════════════
 // src/views/arriving-alerts/view.js
 //
-// REFACTOR (data-driven, 2026-04-26):
-//   init() awaits StorageService.get('order') for driver/payment data
-//   and StorageService.get('preferences') for delivery instructions.
+// REFACTOR (real API, 2026-05-05):
+//   init() now awaits CustomerPortalAPI.fetchOrder() and fetchTracking()
+//   which call GET /customer-portal/orders/{token} and
+//   GET /customer-portal/orders/{token}/tracking on the Laravel backend.
+//   Customer preferences (delivery instructions) are embedded in the order.
 // ════════════════════════════════════════════════════════════════════════
 
-import { StorageService } from '../../utils/storage.js';
+import { fetchOrder, fetchTracking } from '../../services/api/customer-portal.js';
 
 let cleanups = [];
 
 export async function init(root) {
   cleanups = [];
 
-  // ── 1. Fetch data in parallel ────────────────────────────────────────
-  const [order, preferences] = await Promise.all([
-    StorageService.get('order'),
-    StorageService.get('preferences'),
+  // ── 1. Fetch order & live tracking from the Laravel backend ────────────
+  //    GET /customer-portal/orders/{token}
+  //    GET /customer-portal/orders/{token}/tracking
+  //    Preferences (delivery notes) are embedded in the order payload.
+  const [order, tracking] = await Promise.all([
+    fetchOrder(),
+    fetchTracking(),
   ]);
 
-  if (order) {
-    const { driver, amountDue, amountCurrency } = order;
+  // Merge live tracking into the order (driver fields may differ)
+  const orderData = tracking
+    ? { ...order, driver: { ...order?.driver, ...tracking?.driver }, ...tracking }
+    : order;
+
+  // Preferences are embedded in the order by the backend
+  const preferences = orderData?.preferences ?? null;
+
+
+  if (orderData) {
+    const { driver, amountDue, amountCurrency } = orderData;
 
     // Distance badge
     const distanceBadge = root.querySelector('.aa-distance-badge');

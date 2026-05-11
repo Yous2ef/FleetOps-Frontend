@@ -30,7 +30,8 @@ export async function mount() {
     driversData = await DriverStorage.getDrivers();
     
     renderDrivers(driversData);
-    renderCharts();
+    // Pass driversData so the chart counts are calculated dynamically
+    renderCharts(driversData);
 
     document.getElementById("drivers-search")?.addEventListener("input", handleSearch);
     
@@ -226,7 +227,11 @@ export function unmount() {
   }
 }
 
-function renderCharts() {
+/**
+ * Renders the performance bar chart and the driver-status doughnut chart.
+ * @param {Array} data - The live driversData array; used to calculate doughnut segments.
+ */
+function renderCharts(data = []) {
   const barCtx = document.getElementById('performanceBarChart');
   const doughnutCtx = document.getElementById('statusDoughnutChart');
   
@@ -263,12 +268,25 @@ function renderCharts() {
     }
   });
 
+  // ── Doughnut: dynamically calculate counts from the fetched drivers array ──
+  const activeCount   = data.filter(d => d.status === 'Active' || d.status === 'On Route' || d.status === 'Available').length;
+  const onBreakCount  = data.filter(d => d.status === 'On Break').length;
+  // Everything else (Offline, Off Duty, unknown) falls into the third segment
+  const offlineCount  = data.filter(d =>
+    d.status !== 'Active' && d.status !== 'On Route' &&
+    d.status !== 'Available' && d.status !== 'On Break'
+  ).length;
+
+  /* // Old hardcoded doughnut data — replaced by dynamic calculation above
+  const hardcodedData = [45, 12, 8];
+  */
+
   statusChartInstance = new Chart(doughnutCtx, {
     type: 'doughnut',
     data: {
-      labels: ['Active', 'On Break', 'Offline'],
+      labels: ['Active / Available', 'On Break', 'Offline'],
       datasets: [{
-        data: [45, 12, 8],
+        data: [activeCount, onBreakCount, offlineCount],
         backgroundColor: ['#10b981', '#f59e0b', '#94a3b8'], // Green, Yellow/Orange, Gray
         borderWidth: 0,
         hoverOffset: 4
@@ -289,3 +307,4 @@ function renderCharts() {
     }
   });
 }
+

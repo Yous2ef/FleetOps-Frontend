@@ -19,29 +19,43 @@ export function unmount() {
     cleanupFns = [];
 }
 
-function renderVehicles() {
+async function renderVehicles() {
     const grid = document.getElementById('vehicle-grid');
     if (!grid) return;
 
-    grid.innerHTML = MaintenanceApi.getVehicles().map(v => {
-        const healthClass = v.state === 'critical' ? 'critical' : v.state === 'warning' ? 'warning' : 'healthy';
-        return `
-            <div class="health-card ${healthClass}">
-                <div class="health-card__header">
-                    <div class="health-card__identity">
-                        <i data-lucide="truck"></i>
-                        <h3 class="health-card__id">${v.id}<span class="health-card__type">${v.type}</span></h3>
+    try {
+        const vehicles = await MaintenanceApi.getVehicles();
+
+        grid.innerHTML = vehicles.map(v => {
+            const healthClass = v.state === 'critical' ? 'critical' : v.state === 'warning' ? 'warning' : 'healthy';
+            return `
+                <div class="health-card ${healthClass}">
+                    <div class="health-card__header">
+                        <div class="health-card__identity">
+                            <i data-lucide="truck"></i>
+                            <h3 class="health-card__id">${v.plate || v.id}<span class="health-card__type">${v.type}</span></h3>
+                        </div>
+                        <div class="health-dot ${healthClass}"></div>
                     </div>
-                    <div class="health-dot ${healthClass}"></div>
+                    <div class="health-card__meta">
+                        <p>Make/Model: <span>${v.make_model || 'Unknown'}</span></p>
+                        <p>Odometer: <span>${v.odometer || '0'}</span></p>
+                        <p>Market Value: <span>${v.market_value || '0'} EGP</span></p>
+                        <p>Insurance: <span>${v.insurance_expiry || 'N/A'}</span></p>
+                        <p>Last Service: <span>${v.lastService || 'N/A'}</span></p>
+                        <p>Next Due: <strong>${v.nextDue || 'N/A'}</strong></p>
+                    </div>
                 </div>
-                <div class="health-card__meta">
-                    <p>Odometer: <span>${v.odometer}</span></p>
-                    <p>Last Service: <span>${v.lastService}</span></p>
-                    <p>Next Due: <strong>${v.nextDue}</strong></p>
-                </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    } catch (e) {
+        console.error("Error rendering vehicles:", e);
+        grid.innerHTML = `<p class="error-msg">Failed to load vehicles.</p>`;
+    }
 }
 
 function renderWorkOrders() {

@@ -1,21 +1,24 @@
 // ════════════════════════════════════════════════════════════════════════
 // src/views/deliver-preferences/view.js
 //
-// REFACTOR (data-driven, 2026-04-26):
-//   init() awaits StorageService.get('preferences') to pre-select the
-//   previously saved delivery option and restore the notes textarea.
-//   handleSave() persists the new selection via StorageService.save().
+// REFACTOR (real API, 2026-05-05):
+//   init() fetches saved preferences embedded in the order via
+//   CustomerPortalAPI.fetchOrder() (GET /customer-portal/orders/{token}).
+//   handleSave() persists via CustomerPortalAPI.savePreferences()
+//   (POST /customer-portal/orders/{token}/preferences).
 // ════════════════════════════════════════════════════════════════════════
 
-import { StorageService } from '../../utils/storage.js';
+import { fetchOrder, savePreferences } from '../../services/api/customer-portal.js';
 
 const dpCleanupFns = [];
 
 export async function init(root) {
   dpCleanupFns.length = 0;
 
-  // ── 1. Load saved preferences ────────────────────────────────────────
-  const saved = await StorageService.get('preferences');
+  // ── 1. Load saved preferences from the backend (embedded in the order) ─
+  //    GET /customer-portal/orders/{token}
+  const order = await fetchOrder();
+  const saved = order?.preferences ?? null;
 
   // ── 2. Restore previous selection ───────────────────────────────────
   const cards = root.querySelectorAll('.dp-card');
@@ -66,12 +69,11 @@ export async function init(root) {
       option:  selectedCard?.dataset.option ?? null,
       label:   selectedCard?.querySelector('.dp-card__label')?.textContent?.trim() ?? null,
       notes,
-      savedAt: new Date().toISOString(),
     };
 
-    // Persist to storage — this is the single source of truth that
-    // arriving-alerts and other views will read.
-    await StorageService.save('preferences', payload);
+    // POST preferences to the Laravel backend
+    //    POST /customer-portal/orders/{token}/preferences
+    await savePreferences(payload);
 
     console.log('[DeliveryPreferences] Saved:', payload);
 

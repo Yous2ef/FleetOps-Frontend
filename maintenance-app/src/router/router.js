@@ -1,5 +1,10 @@
-import { normalizePath, notFoundRoute, routes } from "./routes.js";
-import { isAuthenticated, redirectToLogin } from "../services/auth.js";
+import {
+    canAccessPath,
+    normalizePath,
+    normalizeRole,
+    notFoundRoute,
+    routes,
+} from "./routes.js";
 
 export function initRouter({ outletId }) {
     const outlet = document.getElementById(outletId);
@@ -12,21 +17,70 @@ export function initRouter({ outletId }) {
 
     async function renderCurrentRoute() {
         const currentPath = normalizePath(window.location.pathname);
+        const token = localStorage.getItem("token");
+        const userRaw = localStorage.getItem("user");
+        let currentRole = "";
+
+        if (userRaw) {
+            try {
+                currentRole = normalizeRole(JSON.parse(userRaw)?.role);
+            } catch {
+                currentRole = "";
+            }
+        }
+
+        // ─── Route Guard (نظام الحماية) ──────────────────────────────────
+
+        // 1. إذا لم يكن مسجل الدخول ويحاول فتح أي صفحة -> توجيه لصفحة تسجيل الدخول
+        if (!token && currentPath !== "/login") {
+            navigateTo("/login");
+            return;
+        }
+
+        // 2. إذا كان مسجل الدخول ويحاول فتح صفحة تسجيل الدخول -> توجيه للوحة التحكم
+        if (token && currentPath === "/login") {
+            navigateTo("/");
+            return;
+        }
+
+        // 3. تحقق من أن لدينا role مع التوكن
+        if (token && currentPath !== "/login" && !currentRole) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            navigateTo("/login");
+            return;
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+
         const activeRoute =
             routes.find((route) => route.path === currentPath) ?? notFoundRoute;
 
-        // Auth guard — redirect to /login if not authenticated and route is not public
-        if (!activeRoute.public && !isAuthenticated()) {
-            redirectToLogin();
-            return;
+        // تحقق من الصلاحيات
+        if (activeRoute.path !== "/login" && activeRoute.path !== "/404") {
+            if (!canAccessPath(activeRoute.path, currentRole)) {
+                navigateTo("/");
+                return;
+            }
         }
+
+        // ─── Layout Toggle (تعديل الهيكل الخارجي لصفحة الدخول) ────────────
+        const shell = document.querySelector("[data-shell]");
+        if (activeRoute.path === "/login") {
+            shell?.classList.add("is-login-layout");
+        } else {
+            shell?.classList.remove("is-login-layout");
+        }
+        // ─────────────────────────────────────────────────────────────────
 
         if (currentRouteModule?.unmount) {
             currentRouteModule.unmount(outlet);
         }
 
         const cacheBuster = `?t=${Date.now()}`;
-        const htmlResponse = await fetch(`${activeRoute.view.html}${cacheBuster}`);
+        const htmlResponse = await fetch(
+            `${activeRoute.view.html}${cacheBuster}`,
+        );
         if (!htmlResponse.ok) {
             throw new Error(
                 `Failed to load HTML view: ${activeRoute.view.html}`,
@@ -48,15 +102,18 @@ export function initRouter({ outletId }) {
         currentRouteStylesheet = stylesheet;
         document.title = activeRoute.title;
         outlet.innerHTML = html;
-        document.getElementById("nav-title").textContent = activeRoute.title;
 
-        // Hide the app shell (sidebar + topbar) on public pages like /login
-        const shell = document.querySelector("[data-shell]");
-        if (shell) {
-            shell.classList.toggle("is-public-page", Boolean(activeRoute.public));
+        // تحديث عنوان الـ Topbar فقط إذا لم نكن في صفحة تسجيل الدخول
+        if (activeRoute.path !== "/login") {
+            const navTitle = document.getElementById("nav-title");
+            if (navTitle) {
+                navTitle.textContent = activeRoute.title;
+            }
         }
 
-        const routeModule = await import(`${activeRoute.view.js}${cacheBuster}`);
+        const routeModule = await import(
+            `${activeRoute.view.js}${cacheBuster}`
+        );
         currentRouteModule = routeModule;
 
         if (routeModule.mount) {
@@ -93,6 +150,7 @@ export function initRouter({ outletId }) {
 
         const href = link.getAttribute("href");
 
+        // تجاهل الروابط الخارجية
         if (!href || href.startsWith("http")) {
             return;
         }
@@ -127,6 +185,7 @@ export function initRouter({ outletId }) {
     document.addEventListener("click", handleLinkNavigation);
     window.addEventListener("popstate", handlePopState);
 
+    // Initial render
     renderCurrentRoute().catch(handleRenderError);
 
     return {

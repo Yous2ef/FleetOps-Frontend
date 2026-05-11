@@ -1,12 +1,14 @@
 import api from "/shared/api-handler.js";
-import { drivers } from "../storage/drivers.js";
+// تم عمل كومنت لاستدعاء الداتا الوهمية
+// import { drivers } from "../storage/drivers.js";
 
 // ─── Global Setup ─────────────────────────────────────────────────────────────
 
-api.setBaseURL("http://localhost:3000");
-
+// تعديل البورت لـ 8000 عشان يكلم لارفيل
+api.setBaseURL("http://localhost:8000/api");
 // ─── API Methods ─────────────────────────────────────────────────────────────
 
+/* // تم عمل كومنت للـ login والـ profile الوهمي مؤقتاً
 function login(email, password) {
   const driver = drivers.find(
     (d) => d.email === email && d.password === password,
@@ -24,21 +26,104 @@ function getDriverProfile(id) {
   }
   throw new Error("Driver not found");
 }
+*/
 
+// ⬇️ ===== الجزء الجديد اللي تم إضافته لجلب الداتا من الـ API ===== ⬇️
+
+/* // الـ mapping القديم البسيط — تم تعويضه بالـ mapping الكامل أدناه
+async function getDrivers_OLD_SHALLOW() {
+  try {
+    const response = await api.get('/v1/users/drivers/Available');
+    if (response.ok && response.data?.success) {
+      return response.data.data.map(d => ({
+        id: d.driver_id || d.id,
+        name: d.user?.name || "Unknown Driver",
+        license: d.license_no || "N/A",
+        status: d.status || "Available",
+        score: d.score || 0,
+        phone: "N/A",
+        vehicle: "Unassigned",
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error("API Error:", error);
+    return [];
+  }
+}
+*/
+
+/**
+ * Fetches available drivers from the backend and maps each record to the
+ * full nested structure expected by the Drivers view UI.
+ *
+ * Backend shape: { driver_id, license_no, status, score, user: { name, email, phone } }
+ * UI shape:      { id, name, status, rating, contact, performance, vehicle, license }
+ */
 async function getDrivers() {
+  try {
+    const response = await api.get('http://localhost:8000/api/v1/users/drivers/Available');
+    if (response.ok && response.data?.success) {
+      // ── Map each backend driver record to the rich object the UI renders ──
+      return response.data.data.map(d => ({
+        // ── Identity ──────────────────────────────────────────────────────
+        id: d.driver_id ?? d.id ?? 'unknown',
+        name: d.name || d.user?.name || "Unknown Driver",
+        status: d.status ?? 'Available',
+        rating: d.rating ?? 'N/A',
+
+        // ── Contact info ─────────────────────────────────────────────────
+        contact: {
+          phone: d.user?.phone ?? d.phone ?? 'N/A',
+          email: d.user?.email ?? d.email ?? 'N/A',
+        },
+
+        // ── Performance metrics ───────────────────────────────────────────
+        performance: {
+          safetyScore: d.score ?? 0,
+          totalDeliveries: d.total_deliveries ?? 0,
+          onTimeRate: d.on_time_rate ?? 0,
+        },
+
+        // ── Assigned vehicle ─────────────────────────────────────────────
+        vehicle: {
+          id: d.vehicle?.vehicle_id ?? d.vehicle_id ?? 'Unassigned',
+          type: d.vehicle?.VehicleType ?? d.vehicle_type ?? 'N/A',
+          plate: d.vehicle?.VehicleLicense ?? d.vehicle_plate ?? 'N/A',
+        },
+
+        // ── License details ───────────────────────────────────────────────
+        license: {
+          number: d.license_no ?? 'N/A',
+          expiry: d.license_expiry ?? 'N/A',
+        },
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error('[DriverStorage] API Error in getDrivers():', error);
+    return [];
+  }
+}
+// ⬆️ ============================================================== ⬆️
+
+/*
+// تم عمل كومنت لدالة جلب الداتا الوهمية
+async function getDriversMock() {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve([...drivers]);
     }, 200);
   });
 }
+*/
 
 // ────────────────────────────────────────────────────────────────
 const DriverStorage = {
-  login,
-  getDriverProfile,
+  // login,
+  // getDriverProfile,
   getDrivers,
 };
 
-export { drivers };
+// export { drivers };
 export default DriverStorage;

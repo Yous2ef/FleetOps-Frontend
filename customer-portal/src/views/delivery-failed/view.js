@@ -1,12 +1,13 @@
 // ════════════════════════════════════════════════════════════════════════
 // src/views/delivery-failed/view.js
 //
-// REFACTOR (data-driven, 2026-04-26):
-//   init() awaits StorageService.get('order') and dynamically renders:
-//   attempt time, failure reason, support phone, and the tracking timeline.
+// REFACTOR (real API, 2026-05-05):
+//   init() now awaits CustomerPortalAPI.fetchOrder() which calls
+//   GET /customer-portal/orders/{token} on the Laravel backend.
+//   Support info (phone) is embedded in the order payload.
 // ════════════════════════════════════════════════════════════════════════
 
-import { StorageService } from '../../utils/storage.js';
+import { fetchOrder } from '../../services/api/customer-portal.js';
 
 let cleanups = [];
 
@@ -78,8 +79,9 @@ function renderTimeline(root, order) {
 export async function init(root) {
   cleanups = [];
 
-  // ── 1. Fetch order data ──────────────────────────────────────────────
-  const order = await StorageService.get('order');
+  // ── 1. Fetch order from the Laravel backend ──────────────────────────
+  //    GET /customer-portal/orders/{token}
+  const order = await fetchOrder();
 
   if (order) {
     renderBanner(root, order);

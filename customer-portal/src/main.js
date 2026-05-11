@@ -10,7 +10,7 @@
 
 import { initRouter }         from './router/router.js';
 import { NotificationService } from './utils/notifications.js';
-import { seedIfEmpty }         from './utils/seeder.js';
+// import { seedIfEmpty }         from './utils/seeder.js';
 
 // ── Bottom Nav Allowlist ─────────────────────────────────────────────────
 
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 1. Seed initial data into localStorage on first visit.
   //    This must complete before the router renders any view, otherwise
   //    views that await StorageService.get() may find empty keys.
-  await seedIfEmpty();
+  //await seedIfEmpty();
 
   // 2. Boot the notification service.
   //    boot() is now async — it hydrates from storage before wiring DOM.

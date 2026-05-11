@@ -1,16 +1,14 @@
 // ════════════════════════════════════════════════════════════════════════
 // src/views/order-confirmed/view.js
 //
-// REFACTOR (data-driven, 2026-04-26):
-//   init() now awaits StorageService.get('order') and dynamically
-//   renders: delivery address, expected arrival, order items,
+// REFACTOR (real API, 2026-05-05):
+//   init() now awaits CustomerPortalAPI.fetchOrder() which calls
+//   GET /customer-portal/orders/{token} on the Laravel backend.
+//   Renders: delivery address, expected arrival, order items,
 //   item count badge, order total, and the progress timeline.
-//
-//   To swap in a real API, replace StorageService with:
-//     const order = await fetch('/api/orders/current').then(r => r.json());
 // ════════════════════════════════════════════════════════════════════════
 
-import { StorageService }     from '../../utils/storage.js';
+import { fetchOrder }          from '../../services/api/customer-portal.js';
 import { NotificationService } from '../../utils/notifications.js';
 
 // ── Rendering helpers ────────────────────────────────────────────────────
@@ -102,13 +100,12 @@ function renderOrderMeta(root, order) {
 // ── Lifecycle ────────────────────────────────────────────────────────────
 
 export async function init(root) {
-  // ── 1. Fetch order data ──────────────────────────────────────────────
-  //    Replace this line with a real fetch() call when the backend is ready:
-  //    const order = await fetch('/api/orders/current').then(r => r.json());
-  const order = await StorageService.get('order');
+  // ── 1. Fetch order from the Laravel backend ──────────────────────────
+  //    GET /customer-portal/orders/{token}
+  const order = await fetchOrder();
 
   if (!order) {
-    console.error('[order-confirmed] No order data found in storage.');
+    console.error('[order-confirmed] Failed to load order data from the API.');
     return;
   }
 
@@ -129,9 +126,6 @@ export async function init(root) {
       notifyBtn.style.background = 'var(--status-success)';
       notifyBtn.disabled = true;
       syncPromoBtn();
-
-      // Persist the user's notification preference
-      StorageService.update('order', { notificationsEnabled: true });
     };
   }
 
@@ -141,7 +135,6 @@ export async function init(root) {
       promoBtn.textContent = 'Notifications On';
       promoBtn.disabled = true;
       syncMainBtn();
-      StorageService.update('order', { notificationsEnabled: true });
     };
   }
 

@@ -2,12 +2,17 @@
 <html lang="en">
     <head>
         <meta charset="utf-8" />
-        <base href="/" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Maintenance App</title>
         <link rel="icon" href="data:," />
         <link rel="stylesheet" href="./src/styles/main.css" />
+        <!--    <style>
+        [data-shell] {
+            display: none;
+        }
+    </style>-->
     </head>
+
     <body>
         <div class="dashboard-shell" data-shell>
             <aside class="dashboard-sidebar" aria-label="Sidebar Navigation">
@@ -45,6 +50,7 @@
                         href="/"
                         data-link
                         data-route="/"
+                        data-allowed-roles="fleetmanager"
                         title="Dashboard">
                         <span class="sidebar-link__icon"
                             ><i data-lucide="layout-dashboard"></i
@@ -56,6 +62,7 @@
                         href="/work-orders"
                         data-link
                         data-route="/work-orders"
+                        data-allowed-roles="fleetmanager"
                         title="Work Orders">
                         <span class="sidebar-link__icon"
                             ><i data-lucide="clipboard-list"></i
@@ -67,6 +74,7 @@
                         href="/my-work-orders"
                         data-link
                         data-route="/my-work-orders"
+                        data-allowed-roles="mechanic"
                         title="My Work Orders">
                         <span class="sidebar-link__icon"
                             ><i data-lucide="clipboard-check"></i
@@ -78,6 +86,7 @@
                         href="/vehicles"
                         data-link
                         data-route="/vehicles"
+                        data-allowed-roles="fleetmanager"
                         title="Vehicles">
                         <span class="sidebar-link__icon"
                             ><i data-lucide="car"></i
@@ -89,6 +98,7 @@
                         href="/spare-parts"
                         data-link
                         data-route="/spare-parts"
+                        data-allowed-roles="fleetmanager,mechanic"
                         title="Spare Parts">
                         <span class="sidebar-link__icon"
                             ><i data-lucide="package"></i
@@ -100,6 +110,7 @@
                         href="/technician-assignment"
                         data-link
                         data-route="/technician-assignment"
+                        data-allowed-roles="fleetmanager"
                         title="Technician Assignment">
                         <span class="sidebar-link__icon"
                             ><i data-lucide="users"></i
@@ -113,6 +124,7 @@
                         href="/fuel-efficiency"
                         data-link
                         data-route="/fuel-efficiency"
+                        data-allowed-roles="fleetmanager"
                         title="Fuel &amp; Efficiency">
                         <span class="sidebar-link__icon"
                             ><i data-lucide="fuel"></i
@@ -126,6 +138,7 @@
                         href="/alerts-inspections"
                         data-link
                         data-route="/alerts-inspections"
+                        data-allowed-roles="fleetmanager"
                         title="Alerts &amp; Inspections">
                         <span class="sidebar-link__icon"
                             ><i data-lucide="triangle-alert"></i
@@ -139,6 +152,7 @@
                         href="/emergency-dispatch"
                         data-link
                         data-route="/emergency-dispatch"
+                        data-allowed-roles="fleetmanager"
                         title="Emergency Dispatch">
                         <span class="sidebar-link__icon"
                             ><i data-lucide="siren"></i
@@ -152,6 +166,7 @@
                         href="/cost-to-value"
                         data-link
                         data-route="/cost-to-value"
+                        data-allowed-roles="fleetmanager"
                         title="Cost-to-Value">
                         <span class="sidebar-link__icon"
                             ><i data-lucide="trending-up"></i
@@ -163,6 +178,7 @@
                         href="/notifications"
                         data-link
                         data-route="/notifications"
+                        data-allowed-roles="fleetmanager,mechanic"
                         title="Notifications">
                         <span class="sidebar-link__icon"
                             ><i data-lucide="bell"></i
@@ -175,6 +191,7 @@
                         href="/preview-page"
                         data-link
                         data-route="/preview-page"
+                        data-allowed-roles="fleetmanager"
                         title="Preview Page">
                         <span class="sidebar-link__icon"
                             ><i data-lucide="eye"></i
@@ -218,9 +235,24 @@
                             class="topbar-icon-btn topbar-notification-btn"
                             type="button"
                             aria-label="Notifications"
-                            onclick="import('./src/utils/notification-ui.js').then(module => module.showNotificationPanel()).catch(err => console.error('Error loading panel:', err))">
+                            onclick="
+                                import('./src/utils/notification-ui.js')
+                                    .then((module) =>
+                                        module.showNotificationPanel(),
+                                    )
+                                    .catch((err) =>
+                                        console.error(
+                                            'Error loading panel:',
+                                            err,
+                                        ),
+                                    )
+                            ">
                             <i data-lucide="bell"></i>
-                            <span class="topbar-notification-badge" id="notif-badge">4</span>
+                            <span
+                                class="topbar-notification-badge"
+                                id="notif-badge"
+                                >4</span
+                            >
                         </button>
                         <div class="topbar-user">
                             <div class="topbar-user__avatar">JM</div>

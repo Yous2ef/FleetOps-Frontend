@@ -67,28 +67,41 @@ function _fmtDate(value) {
 
 // ─── API Methods ──────────────────────────────────────────────────────────────
 
+/**
+ * Returns the list of vehicles with health state info from backend.
+ */
 async function getVehicles() {
-    const { data } = await api.get(`${KPI_BASE}/anomalies`);
-    const items = Array.isArray(data) ? data : (data?.vehicles ?? data?.data ?? data?.items ?? []);
-    return items.map(normalizeVehicle);
+    try {
+        const response = await api.get('/api/v1/maintenance/vehicles');
+        if (response?.data?.success && Array.isArray(response.data.data)) {
+            return response.data.data;
+        }
+        return [];
+    } catch (error) {
+        console.error('Failed to fetch maintenance vehicles:', error);
+        return [];
+    }
 }
 
-async function getWorkOrders() {
-    const { data } = await api.get(WO_BASE);
-    const items = Array.isArray(data) ? data : (data?.data ?? data?.items ?? []);
-    return items.slice(0, 10).map(normalizeWorkOrder);
+/**
+ * Returns the list of active/recent work orders.
+ */
+function getWorkOrders() {
+    return [...maintenanceWorkOrdersData];
 }
 
-async function getAlerts() {
-    const { data } = await api.get(`${KPI_BASE}/anomalies`);
-    const items = Array.isArray(data) ? data : (data?.alerts ?? data?.data ?? data?.items ?? []);
-    return items.map(normalizeAlert);
+/**
+ * Returns the list of maintenance alerts.
+ */
+function getAlerts() {
+    return [...maintenanceAlertsData];
 }
 
-async function getStockWarnings() {
-    const { data } = await api.get(`${PARTS_BASE}/low-stock`);
-    const items = Array.isArray(data) ? data : (data?.data ?? data?.items ?? []);
-    return items.map(normalizeStockWarning);
+/**
+ * Returns the list of low-stock inventory warnings.
+ */
+function getStockWarnings() {
+    return [...stockWarningsData];
 }
 
 // ─── Export ───────────────────────────────────────────────────────────────────

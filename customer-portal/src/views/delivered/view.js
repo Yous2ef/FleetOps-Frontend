@@ -1,14 +1,14 @@
 // ════════════════════════════════════════════════════════════════════════
 // src/views/delivered/view.js
 //
-// REFACTOR (data-driven, 2026-04-26):
-//   init() awaits StorageService.get('order') and dynamically renders:
-//   delivery time, address, signed-by name, and the full delivery timeline.
-//   Feedback submission is persisted back to storage.
+// REFACTOR (real API, 2026-05-05):
+//   init() now awaits CustomerPortalAPI.fetchOrder() which calls
+//   GET /customer-portal/orders/{token} on the Laravel backend.
+//   submitFeedback() posts to POST /customer-portal/orders/{token}/feedback.
 // ════════════════════════════════════════════════════════════════════════
 
-import { StorageService }     from '../../utils/storage.js';
-import { NotificationService } from '../../utils/notifications.js';
+import { fetchOrder, submitFeedback } from '../../services/api/customer-portal.js';
+import { NotificationService }         from '../../utils/notifications.js';
 
 let _handleStarClick = null;
 let _handlePillClick = null;
@@ -74,8 +74,9 @@ export async function init(root) {
   _rating    = 0;
   _condition = null;
 
-  // ── 1. Fetch order data ──────────────────────────────────────────────
-  const order = await StorageService.get('order');
+  // ── 1. Fetch order from the Laravel backend ──────────────────────────
+  //    GET /customer-portal/orders/{token}
+  const order = await fetchOrder();
   if (order) {
     renderDeliveryInfo(root, order);
     renderTimeline(root, order);
@@ -123,14 +124,14 @@ export async function init(root) {
     if (!_submitBtn.classList.contains('dv-btn-active')) return;
 
     const feedback = {
-      rating:      _rating,
-      condition:   _condition,
-      comments:    _commentsArea?.value?.trim() || '',
-      submittedAt: new Date().toISOString(),
+      rating:    _rating,
+      condition: _condition,
+      comments:  _commentsArea?.value?.trim() || '',
     };
 
-    // Persist feedback to storage under the order
-    await StorageService.update('order', { feedback });
+    // POST feedback to the Laravel backend
+    //    POST /customer-portal/orders/{token}/feedback
+    await submitFeedback(feedback);
 
     _submitBtn.textContent = '✓ Feedback Submitted!';
     _submitBtn.classList.replace('dv-btn-active', 'dv-btn-success');

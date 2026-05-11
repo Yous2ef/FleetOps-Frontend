@@ -4,9 +4,16 @@
 ════════════════════════════════════════════════ */
 
 import { showNotificationPanel } from '../../utils/notification-ui.js';
+import api from '/shared/api-handler.js'; // ← Real API handler (absolute path served by dev server)
+
+// تعديل البورت لـ 8000 عشان يكلم لارفيل
+api.setBaseURL('http://localhost:8000');
+
 
 // ─── 1. Data ──────────────────────────────────────────────────────────────
-const FLEET_DATA = [
+
+/* // ── Hardcoded mock data — commented out; replaced by fetchFleetData() below ──
+const FLEET_DATA_MOCK = [
   {
     id: 'V-001', plate: 'TRK-042', type: 'Heavy',
     maxWeight: '500 kg', maxVolume: '12 m³', odometer: '124,500 km',
@@ -72,17 +79,66 @@ const FLEET_DATA = [
     insurance: 'Jul 15, 2026', inspection: 'May 01, 2026',
   },
 ];
+*/
+
+// ── Live data array — populated asynchronously by fetchFleetData() ──
+let FLEET_DATA = [];
+
+/**
+ * Fetches vehicles from the backend API and maps the response to the
+ * UI-expected shape, then updates the module-level FLEET_DATA array.
+ *
+ * Backend shape: { vehicle_id, VehicleLicense, VehicleType, Current_odometer, Status, ... }
+ * UI shape:      { id, plate, type, odometer, status, maxWeight, maxVolume, ... }
+ */
+async function fetchFleetData() {
+  try {
+    const response = await api.get('http://localhost:8000/api/v1/dispatch/fleet/vehicles');
+    if (response.ok && response.data?.success) {
+      FLEET_DATA = response.data.data.map(v => ({
+        // ── Identity & Classification ────────────────────────────────────
+        id: v.vehicle_id ?? v.id ?? 'N/A',
+        plate: v.VehicleLicense ?? 'N/A',
+        type: v.VehicleType ?? 'N/A',
+
+        // ── Operational fields ────────────────────────────────────────────
+        odometer: v.Current_odometer
+          ? `${Number(v.Current_odometer).toLocaleString()} km`
+          : 'N/A',
+        status: v.Status ?? v.status ?? 'Unknown',
+        mechanic: v.mechanic ?? null,
+        damageReport: v.damage_report ?? null,
+
+        // ── Capacity (backend may not provide these; fall back gracefully) ─
+        maxWeight: v.max_weight ? `${v.max_weight} kg` : 'N/A',
+        maxVolume: v.max_volume ? `${v.max_volume} m³` : 'N/A',
+
+        // ── Financial & compliance ────────────────────────────────────────
+        marketValue: v.market_value
+          ? `SAR ${Number(v.market_value).toLocaleString()}`
+          : 'N/A',
+        lastService: v.last_service ?? v.updated_at?.split('T')[0] ?? 'N/A',
+        insurance: v.insurance_expiry ?? 'N/A',
+        inspection: v.inspection_expiry ?? 'N/A',
+      }));
+    } else {
+      console.warn('[FleetOps] fetchFleetData: API returned non-success response.');
+    }
+  } catch (error) {
+    console.error('[FleetOps] fetchFleetData error:', error);
+  }
+}
 
 const MECHANICS = [
-  { id: 'M-01', name: 'Ali Mechanic',   specialty: 'Engine & Transmission',   jobs: '1 active job(s)', available: true  },
-  { id: 'M-02', name: 'Yousef Tech',    specialty: 'Electrical & Electronics', jobs: '0 active job(s)', available: true  },
-  { id: 'M-03', name: 'Faisal Heavy',   specialty: 'Heavy Vehicle Specialist', jobs: '3 active job(s)', available: false },
-  { id: 'M-04', name: 'Saeed Body',     specialty: 'Body & Paint',             jobs: '2 active job(s)', available: true  },
-  { id: 'M-05', name: 'Nasser General', specialty: 'General Maintenance',      jobs: '1 active job(s)', available: true  },
+  { id: 'M-01', name: 'Ali Mechanic', specialty: 'Engine & Transmission', jobs: '1 active job(s)', available: true },
+  { id: 'M-02', name: 'Yousef Tech', specialty: 'Electrical & Electronics', jobs: '0 active job(s)', available: true },
+  { id: 'M-03', name: 'Faisal Heavy', specialty: 'Heavy Vehicle Specialist', jobs: '3 active job(s)', available: false },
+  { id: 'M-04', name: 'Saeed Body', specialty: 'Body & Paint', jobs: '2 active job(s)', available: true },
+  { id: 'M-05', name: 'Nasser General', specialty: 'General Maintenance', jobs: '1 active job(s)', available: true },
 ];
 
 // ── Module State ──────────────────────────────────────────────────────────
-let currentFilter    = 'All';
+let currentFilter = 'All';
 let selectedMechanic = null;
 let currentVehicleId = null;
 // ─── Charts Logic ───
@@ -114,8 +170,8 @@ function renderVehicleCharts() {
         pointRadius: 3
       }]
     },
-    options: { 
-      responsive: true, 
+    options: {
+      responsive: true,
       maintainAspectRatio: false, // بيخلي الرسمة تملى الكونتينر
       plugins: { legend: { display: false } },
       scales: { y: { beginAtZero: false } }
@@ -134,9 +190,9 @@ function renderVehicleCharts() {
         borderRadius: 4
       }]
     },
-    options: { 
-      responsive: true, 
-      maintainAspectRatio: false, 
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
       plugins: { legend: { display: false } }
     }
   });
@@ -144,7 +200,7 @@ function renderVehicleCharts() {
 // ─── 2. SVG Icons ─────────────────────────────────────────────────────────
 const ICONS = {
   edit: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
-  eye:  `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  eye: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
   wrench: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
   user: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
 };
@@ -191,8 +247,8 @@ function renderTable(data = FLEET_DATA) {
           <button class="icon-btn btn-edit" data-id="${v.id}" title="Edit">${ICONS.edit}</button>
           <button class="icon-btn btn-view" data-id="${v.id}" title="View details">${ICONS.eye}</button>
           ${v.status === 'Damaged'
-            ? `<button class="icon-btn danger assign-btn" data-id="${v.id}" title="Repair">${ICONS.wrench}</button>`
-            : ''}
+      ? `<button class="icon-btn danger assign-btn" data-id="${v.id}" title="Repair">${ICONS.wrench}</button>`
+      : ''}
         </div>
       </td>
     </tr>
@@ -207,10 +263,10 @@ function updatePageStats() {
   const inMaint = FLEET_DATA.filter(v => v.status === 'In Maintenance').length;
 
   const el = id => document.getElementById(id);
-  if (el('vehicleCount'))  el('vehicleCount').textContent  = `${FLEET_DATA.length} vehicles in fleet`;
-  if (el('alertTitle'))    el('alertTitle').textContent    = `${damaged} vehicle(s) damaged — needs mechanic assignment`;
-  if (el('alertTag'))      el('alertTag').textContent      = `${inMaint} in maintenance`;
-  if (el('damagedCount'))  el('damagedCount').textContent  = damaged;
+  if (el('vehicleCount')) el('vehicleCount').textContent = `${FLEET_DATA.length} vehicles in fleet`;
+  if (el('alertTitle')) el('alertTitle').textContent = `${damaged} vehicle(s) damaged — needs mechanic assignment`;
+  if (el('alertTag')) el('alertTag').textContent = `${inMaint} in maintenance`;
+  if (el('damagedCount')) el('damagedCount').textContent = damaged;
 }
 
 function initFilters() {
@@ -240,11 +296,11 @@ function initSearch() {
 
 // ─── 7. Add Vehicle Modal ─────────────────────────────────────────────────
 function initAddVehicleModal() {
-  const modal     = document.getElementById('modalOverlay');
-  const openBtn   = document.getElementById('openModalBtn');
-  const closeBtn  = document.getElementById('closeModalBtn');
+  const modal = document.getElementById('modalOverlay');
+  const openBtn = document.getElementById('openModalBtn');
+  const closeBtn = document.getElementById('closeModalBtn');
   const cancelBtn = document.getElementById('cancelModalBtn');
-  const saveBtn   = document.getElementById('saveVehicleBtn');
+  const saveBtn = document.getElementById('saveVehicleBtn');
   if (!modal || !openBtn) return;
 
   const clearForm = () => {
@@ -253,21 +309,21 @@ function initAddVehicleModal() {
     if (typeSelect) typeSelect.selectedIndex = 0;
   };
 
-  const open  = () => { modal.removeAttribute('hidden'); requestAnimationFrame(() => modal.classList.add('is-open')); };
+  const open = () => { modal.removeAttribute('hidden'); requestAnimationFrame(() => modal.classList.add('is-open')); };
   const close = () => { modal.classList.remove('is-open'); setTimeout(() => { modal.setAttribute('hidden', ''); clearForm(); }, 200); };
 
-  openBtn.onclick  = open;
-  if (closeBtn)  closeBtn.onclick  = close;
+  openBtn.onclick = open;
+  if (closeBtn) closeBtn.onclick = close;
   if (cancelBtn) cancelBtn.onclick = close;
   modal.onclick = (e) => { if (e.target === modal) close(); };
-if (saveBtn) {
+  if (saveBtn) {
     saveBtn.onclick = () => {
       // 1. تجميع البيانات من الفورم
       const plate = document.getElementById('fieldPlate')?.value?.trim();
       const weight = document.getElementById('fieldMaxWeight')?.value?.trim();
       const volume = document.getElementById('fieldMaxVolume')?.value?.trim();
       const type = document.getElementById('fieldType')?.value;
-      
+
       // سحب قيم الحقول الجديدة
       const odometer = document.getElementById('fieldOdometer')?.value?.trim();
       const marketValue = document.getElementById('fieldMarketValue')?.value?.trim();
@@ -287,11 +343,11 @@ if (saveBtn) {
         maxWeight: weight ? `${weight} kg` : '-',
         maxVolume: volume ? `${volume} m³` : '-',
         // لو دخل رقم هنحطله فواصل وكلمة km، لو مدخلش هيبقى 0
-        odometer: odometer ? `${Number(odometer).toLocaleString()} km` : '0 km', 
-        status: 'Available', 
+        odometer: odometer ? `${Number(odometer).toLocaleString()} km` : '0 km',
+        status: 'Available',
         mechanic: null,
         // لو دخل رقم هنحطله SAR، لو مدخلش هيبقى SAR —
-        marketValue: marketValue ? `SAR ${Number(marketValue).toLocaleString()}` : 'SAR —', 
+        marketValue: marketValue ? `SAR ${Number(marketValue).toLocaleString()}` : 'SAR —',
         lastService: today,
         damageReport: null,
         insurance: 'N/A',
@@ -349,9 +405,9 @@ function renderMechanicList() {
 }
 
 function initAssignMechanicModal() {
-  const modal      = document.getElementById('assignMechanicModal');
-  const closeBtn   = document.getElementById('closeAssignModal');
-  const cancelBtn  = document.getElementById('cancelAssignModal');
+  const modal = document.getElementById('assignMechanicModal');
+  const closeBtn = document.getElementById('closeAssignModal');
+  const cancelBtn = document.getElementById('cancelAssignModal');
   const confirmBtn = document.getElementById('confirmAssignBtn');
   if (!modal) return null;
 
@@ -370,22 +426,22 @@ function initAssignMechanicModal() {
     currentVehicleId = vehicleId;
     selectedMechanic = null;
 
-    const info       = document.getElementById('assignVehicleInfo');
+    const info = document.getElementById('assignVehicleInfo');
     const reportText = document.getElementById('damageReportText');
-    if (info)       info.textContent       = `${vehicle.plate} — ${vehicle.type}`;
+    if (info) info.textContent = `${vehicle.plate} — ${vehicle.type}`;
     if (reportText) reportText.textContent = vehicle.damageReport || 'No damage details provided.';
 
     modal.querySelectorAll('.mechanic-item').forEach(el => el.classList.remove('selected'));
     const notes = document.getElementById('repairNotes');
-    const date  = document.getElementById('completionDate');
+    const date = document.getElementById('completionDate');
     if (notes) notes.value = '';
-    if (date)  date.value  = '';
+    if (date) date.value = '';
 
     modal.removeAttribute('hidden');
     requestAnimationFrame(() => modal.classList.add('is-open'));
   };
 
-  if (closeBtn)  closeBtn.onclick  = close;
+  if (closeBtn) closeBtn.onclick = close;
   if (cancelBtn) cancelBtn.onclick = close;
   modal.onclick = (e) => { if (e.target === modal) close(); };
 
@@ -393,9 +449,9 @@ function initAssignMechanicModal() {
     confirmBtn.onclick = () => {
       if (!selectedMechanic) { alert('Please select a mechanic before assigning.'); return; }
       const mechanic = MECHANICS.find(m => m.id === selectedMechanic);
-      const vehicle  = FLEET_DATA.find(v => v.id === currentVehicleId);
+      const vehicle = FLEET_DATA.find(v => v.id === currentVehicleId);
       if (vehicle && mechanic) {
-        vehicle.status   = 'In Maintenance';
+        vehicle.status = 'In Maintenance';
         vehicle.mechanic = mechanic.name;
         renderTable();
       }
@@ -428,11 +484,11 @@ function buildFuelHistory(type) {
 const CHART_MONTHS = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
 
 const CHART_DEFAULTS = {
-  teal:        '#0d9488',
-  tealLight:   'rgba(13,148,136,.12)',
-  gridColor:   'rgba(0,0,0,.06)',
-  font:        "'DM Sans', 'Segoe UI', system-ui, sans-serif",
-  tickColor:   '#94a3b8',
+  teal: '#0d9488',
+  tealLight: 'rgba(13,148,136,.12)',
+  gridColor: 'rgba(0,0,0,.06)',
+  font: "'DM Sans', 'Segoe UI', system-ui, sans-serif",
+  tickColor: '#94a3b8',
 };
 
 /**
@@ -457,12 +513,12 @@ function loadChartJS(callback) {
   const script = document.createElement('script');
   script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
   script.setAttribute('data-chartjs-loader', '');
-  script.onload  = callback;
+  script.onload = callback;
   script.onerror = () => console.error('[FleetOps] Failed to load Chart.js from CDN.');
   document.head.appendChild(script);
 }
 function destroyCharts() {
-  if (odoChartInstance)  { odoChartInstance.destroy();  odoChartInstance  = null; }
+  if (odoChartInstance) { odoChartInstance.destroy(); odoChartInstance = null; }
   if (fuelChartInstance) { fuelChartInstance.destroy(); fuelChartInstance = null; }
 }
 function buildCharts(vehicle) {
@@ -484,7 +540,7 @@ function buildCharts(vehicle) {
     tooltip: {
       backgroundColor: '#1e293b',
       titleFont: { size: 12, family: CHART_DEFAULTS.font },
-      bodyFont:  { size: 12, family: CHART_DEFAULTS.font },
+      bodyFont: { size: 12, family: CHART_DEFAULTS.font },
       padding: 10, cornerRadius: 8,
     },
   };
@@ -571,7 +627,7 @@ function statusToBadgeClass(status) {
 }
 
 function initVehicleDetailsModal(openAssignModalFn) {
-  const modal    = document.getElementById('vehicleDetailsModal');
+  const modal = document.getElementById('vehicleDetailsModal');
   const closeBtn = document.getElementById('closeDetailsModal');
   if (!modal) return null;
 
@@ -599,18 +655,18 @@ function initVehicleDetailsModal(openAssignModalFn) {
     if (!v) return;
 
     // ── Populate header
-    const plateEl    = document.getElementById('detailsPlate');
-    const badgeEl    = document.getElementById('detailsStatusBadge');
+    const plateEl = document.getElementById('detailsPlate');
+    const badgeEl = document.getElementById('detailsStatusBadge');
     const subtitleEl = document.getElementById('detailsSubtitle');
-    if (plateEl)    plateEl.textContent    = v.plate;
-    if (badgeEl)  {
+    if (plateEl) plateEl.textContent = v.plate;
+    if (badgeEl) {
       badgeEl.textContent = v.status;
-      badgeEl.className   = `details-status-badge ${statusToBadgeClass(v.status)}`;
+      badgeEl.className = `details-status-badge ${statusToBadgeClass(v.status)}`;
     }
     if (subtitleEl) subtitleEl.textContent = `${v.type} · ${v.id}`;
 
     // ── Damage Report Banner (conditional)
-    const banner     = document.getElementById('detailsDamageBanner');
+    const banner = document.getElementById('detailsDamageBanner');
     const damageText = document.getElementById('detailsDamageText');
     if (banner) {
       if (v.status === 'Damaged' && v.damageReport) {
@@ -625,13 +681,13 @@ function initVehicleDetailsModal(openAssignModalFn) {
 
     // ── Populate stats
     const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    setText('detailsStatStatus',   v.status);
+    setText('detailsStatStatus', v.status);
     setText('detailsStatOdometer', v.odometer);
-    setText('detailsStatValue',    v.marketValue);
-    setText('detailsStatService',  v.lastService);
+    setText('detailsStatValue', v.marketValue);
+    setText('detailsStatService', v.lastService);
 
     // ── Populate documents
-    setText('detailsInsurance',  v.insurance  || 'N/A');
+    setText('detailsInsurance', v.insurance || 'N/A');
     setText('detailsInspection', v.inspection || 'N/A');
 
     // ── Open modal, then load Chart.js (if needed) and render charts
@@ -686,18 +742,26 @@ function handleGlobalClicks(e) {
 }
 
 // ─── 12. Entry Point ─────────────────────────────────────────────────────
-export function initFleetManagement() {
+
+/**
+ * Main initialiser — now async so it can await the fleet data fetch
+ * before rendering the table.
+ */
+export async function initFleetManagement() {
   console.log('[FleetOps] Initializing Fleet Management module…');
 
   document.removeEventListener('click', handleGlobalClicks);
   document.addEventListener('click', handleGlobalClicks);
+
+  // ── Fetch real data from the API before first render ──
+  await fetchFleetData();
 
   renderTable();
   initFilters();
   initSearch();
   initAddVehicleModal();
 
-  const openAssignModal  = initAssignMechanicModal();
+  const openAssignModal = initAssignMechanicModal();
   const openDetailsModal = initVehicleDetailsModal(openAssignModal);
 
   initTableDelegation(openDetailsModal, openAssignModal);
@@ -709,9 +773,18 @@ export function initFleetManagement() {
   });
 }
 
-// SPA-aware boot
+// SPA-aware boot — uses .then() so the async Promise is properly handled
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initFleetManagement);
+  document.addEventListener('DOMContentLoaded', () => initFleetManagement());
 } else {
   initFleetManagement();
+}
+
+export function unmount() {
+    // Remove all document-level listeners added during mount
+    _docListeners.forEach(({ type, fn, opts }) => {
+        document.removeEventListener(type, fn, opts);
+    });
+    _docListeners.length = 0;
+    destroyCharts();
 }

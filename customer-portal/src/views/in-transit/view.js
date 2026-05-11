@@ -1,23 +1,32 @@
 // ════════════════════════════════════════════════════════════════════════
 // src/views/in-transit/view.js
 //
-// REFACTOR (data-driven, 2026-04-26):
-//   init() awaits StorageService.get('order') and dynamically renders:
-//   driver name, vehicle, ETA, stop count, and delivery address.
+// REFACTOR (real API, 2026-05-05):
+//   init() now awaits CustomerPortalAPI.fetchOrder() and fetchTracking()
+//   which call GET /customer-portal/orders/{token} and
+//   GET /customer-portal/orders/{token}/tracking on the Laravel backend.
 // ════════════════════════════════════════════════════════════════════════
 
-import { StorageService } from '../../utils/storage.js';
+import { fetchOrder, fetchTracking } from '../../services/api/customer-portal.js';
 
 let itCleanups = [];
 
 export async function init(root) {
   itCleanups = [];
 
-  // ── 1. Fetch order data ──────────────────────────────────────────────
-  const order = await StorageService.get('order');
+  // ── 1. Fetch order & live tracking from the Laravel backend ────────────
+  //    GET /customer-portal/orders/{token}
+  //    GET /customer-portal/orders/{token}/tracking
+  const [order, tracking] = await Promise.all([
+    fetchOrder(),
+    fetchTracking(),
+  ]);
 
-  if (order) {
-    const { driver, deliveryAddress } = order;
+  // Merge tracking data into order for a unified shape (same as seed)
+  const orderData = tracking ? { ...order, driver: { ...order?.driver, ...tracking?.driver }, ...tracking } : order;
+
+  if (orderData) {
+    const { driver, deliveryAddress } = orderData;
 
     // ETA card
     const etaText = root.querySelector('.it-eta-text');
@@ -52,7 +61,7 @@ export async function init(root) {
 
     // Header order number
     const orderIdEl = root.querySelector('.it-order-id');
-    if (orderIdEl) orderIdEl.textContent = `#${order.id}`;
+    if (orderIdEl) orderIdEl.textContent = `#${orderData.id}`;
   }
 
   // ── 2. Order Summary accordion ───────────────────────────────────────
@@ -68,8 +77,8 @@ export async function init(root) {
   const callBtn = root.querySelector('#it-btn-call');
   const chatBtn = root.querySelector('#it-btn-chat');
 
-  if (callBtn && order?.driver?.phone) {
-    callBtn.onclick = () => { window.location.href = `tel:${order.driver.phone}`; };
+  if (callBtn && orderData?.driver?.phone) {
+    callBtn.onclick = () => { window.location.href = `tel:${orderData.driver.phone}`; };
   }
   if (chatBtn) {
     chatBtn.onclick = () => console.log('[InTransit] Chat with driver triggered');

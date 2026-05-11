@@ -3,7 +3,7 @@ import {usersMockData} from "../storage/users.js";
 
 // ─── Global Setup ─────────────────────────────────────────────────────────────
 
-api.setBaseURL("http://localhost:3000");
+api.setBaseURL("http://127.0.0.1:8000/api");
 
 // ─── API Methods ─────────────────────────────────────────────────────────────
 function getAllUsersMockData() {

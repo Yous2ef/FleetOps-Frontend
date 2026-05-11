@@ -82,7 +82,13 @@
         width 0.2s ease,
         height 0.2s ease;
 }
+.sidebar-link[hidden] {
+    display: none !important;
+}
 
+[hidden] {
+    display: none !important;
+}
 body {
     margin: 0;
     font-family: var(--font-family);
