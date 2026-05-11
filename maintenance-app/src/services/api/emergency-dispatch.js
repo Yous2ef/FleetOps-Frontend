@@ -41,15 +41,15 @@ function shapeIncidents(raw) {
     if (!Array.isArray(raw)) return [];
     return raw.map(r => ({
         id: r.incident_id || r.id,
-        status: r.status || 'Active', // Fallback
+        status: r.status === 'In Progress' ? 'Dispatched' : (r.status || 'Active'), // Map 'In Progress' to 'Dispatched'
         vehicle: {
             plate: r.vehicle?.VehicleLicense || r.vehicle_id || 'Unknown',
             model: r.vehicle?.VehicleModel || 'Unknown',
             type: r.vehicle?.VehicleType || 'Truck',
         },
         driver: {
-            name: r.driver?.DriverName || r.driver?.name || 'Unknown Driver',
-            phone: r.driver?.phone_no || 'N/A'
+            name: r.driver?.user?.name || r.driver?.DriverName || r.driver?.name || 'Unknown Driver',
+            phone: r.driver?.user?.phone_no || r.driver?.phone_no || 'N/A'
         },
         location: {
             address: r.location || 'Unknown Location',
@@ -63,7 +63,8 @@ function shapeIncidents(raw) {
             return `${Math.floor(mins / 60)}h ago`;
         })(),
         timestamp: r.incident_ts || r.created_at,
-        issue: r.description || r.type || 'Breakdown reported'
+        issue: r.description || r.type || 'Breakdown reported',
+        dispatchedMechanicId: r.maintenance_assignment?.mechanic_id || null
     }));
 }
 

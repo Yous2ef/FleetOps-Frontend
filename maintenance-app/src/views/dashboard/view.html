@@ -1,8 +1,4 @@
-﻿<!-- Dashboard View — FleetOps Maintenance Platform -->
-<!-- NOTE: Left sidebar navigation is handled separately by another team member. -->
-<!-- This file covers only the main content area. -->
-
-<div class="dashboard-wrapper">
+﻿<div class="dashboard-wrapper">
 <link rel="stylesheet" href="./src/views/dashboard/view.css">
   <!-- ── Top Header Bar ───────────────────────────────────────────── -->
 
@@ -23,7 +19,7 @@
     <section class="panel recent-work-orders">
       <div class="panel-header">
         <h2 class="panel-title">Recent Work Orders</h2>
-        <a href="#" class="panel-view-all">View All →</a>
+        <a href="/work-orders" class="panel-view-all">View All →</a>
       </div>
       <div class="table-wrapper">
         <table class="wo-table" id="wo-table">
@@ -57,17 +53,6 @@
           <!-- Rendered by view.js -->
         </ul>
       </section>
-
-      <!-- Upcoming / Open Maintenance -->
-      <section class="panel upcoming-maintenance">
-        <div class="panel-header">
-          <h2 class="panel-title">Upcoming / Open Maintenance</h2>
-        </div>
-        <ul class="maintenance-list" id="upcoming-maintenance-list">
-          <!-- Rendered by view.js -->
-        </ul>
-      </section>
-
     </aside>
   </div>
 

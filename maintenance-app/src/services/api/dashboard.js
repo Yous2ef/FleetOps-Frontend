@@ -5,7 +5,7 @@
  * All data is fetched live from the API; no static storage fallbacks.
  *
  * Endpoints used:
- *   GET /api/v1/maintenance/dashboard-summary   → KPI, work orders, vehicles attention, upcoming maintenance
+ *   GET /api/v1/maintenance/dashboard-summary   → KPI, work orders, vehicles attention
  *   GET /api/v1/maintenance/alerts/insurance     → Insurance-expiry alerts
  *   GET /api/v1/maintenance/alerts/inspection    → Overdue-inspection alerts
  *   GET /api/v1/maintenance/alerts/odometer      → Odometer / service-due alerts
@@ -211,6 +211,44 @@ async function getAlertsData() {
   return alerts;
 }
 
+/**
+ * Maps the ALERTS_DATA object from the summary response into the flat alerts list.
+ * @param {object} rawAlerts
+ * @returns {Array}
+ */
+function shapeAlertsFromSummary(rawAlerts) {
+  if (!rawAlerts || typeof rawAlerts !== "object") return [];
+
+  const alerts = [];
+  let counter = 1;
+
+  const push = (items, buildText) => {
+    if (!Array.isArray(items)) return;
+    items.forEach((item) => {
+      alerts.push({ id: `as${counter++}`, text: buildText(item) });
+    });
+  };
+
+  push(rawAlerts.insurance_alerts, (a) => {
+    const plate =
+      a.license_plate ?? a.plate_number ?? a.VehicleLicense ?? "Vehicle";
+    return `${plate} — Insurance alert detected`;
+  });
+
+  push(rawAlerts.inspection_overdue, (a) => {
+    const plate =
+      a.license_plate ?? a.plate_number ?? a.VehicleLicense ?? "Vehicle";
+    return `${plate} — Inspection overdue`;
+  });
+
+  push(rawAlerts.stock_alerts, (a) => {
+    const name = a.part_name ?? a.name ?? "Spare part";
+    return `${name} — Low stock alert`;
+  });
+
+  return alerts;
+}
+
 // ─── Work Orders ──────────────────────────────────────────────────────────────
 
 /**
@@ -249,7 +287,8 @@ function shapeWorkOrders(rows) {
         : "routine";
 
     // Mechanic name
-    const mechanicName = r.mechanic?.name ?? r.assigned_mechanic ?? null;
+    const mechanicName =
+      r.mechanic?.user?.name ?? r.mechanic?.name ?? r.assigned_mechanic ?? null;
 
     // Normalise status: open / in-progress / assigned / resolved / closed
     const rawStatus = (r.status ?? "open")
@@ -392,11 +431,15 @@ function shapeUpcomingMaintenance(raw) {
  * }>}
  */
 async function getDashboardData() {
-  // Fetch dashboard-summary and all alert categories in parallel
-  const [summary, alertsData] = await Promise.all([
-    get("/api/v1/maintenance/dashboard-summary"),
-    getAlertsData(),
-  ]);
+  const summary = await get("/api/v1/maintenance/dashboard-summary");
+
+  // Use alerts from summary if present, otherwise fetch separately
+  let alertsData = [];
+  if (summary?.ALERTS_DATA) {
+    alertsData = shapeAlertsFromSummary(summary.ALERTS_DATA);
+  } else {
+    alertsData = await getAlertsData();
+  }
 
   return {
     kpiData: shapeKpiData(summary?.KPI_DATA),
@@ -404,9 +447,6 @@ async function getDashboardData() {
     workOrdersData: shapeWorkOrders(summary?.WORK_ORDERS_DATA),
     vehiclesAttentionData: shapeVehiclesAttention(
       summary?.VEHICLES_ATTENTION_DATA,
-    ),
-    upcomingMaintenanceData: shapeUpcomingMaintenance(
-      summary?.UPCOMING_MAINTENANCE_DATA,
     ),
   };
 }

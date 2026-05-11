@@ -86,51 +86,6 @@ function renderKPICards(kpiData) {
 }
 
 /**
- * Renders alert banners into #alerts-section.
- * Dismissed alerts are tracked in a local Set (session-only).
- * @param {Array<{id:string, text:string}>} alertsData
- */
-function renderAlerts(alertsData) {
-  const section = document.getElementById('alerts-section');
-  if (!section) return;
-
-  if (!alertsData || alertsData.length === 0) {
-    section.innerHTML = '';
-    return;
-  }
-
-  /** @type {Set<string>} */
-  const dismissed = new Set();
-
-  const redraw = () => {
-    section.innerHTML = alertsData
-      .filter(a => !dismissed.has(a.id))
-      .map(({ id, text }) => `
-        <div class="alert-banner" data-alert-id="${id}">
-          ${WARN_ICON_SVG}
-          <span class="alert-text">${text}</span>
-          <div class="alert-actions">
-            <button class="alert-view-btn" data-alert-view="${id}">View Details →</button>
-            <button class="alert-dismiss-btn" data-alert-dismiss="${id}" aria-label="Dismiss">
-              ${CLOSE_ICON_SVG}
-            </button>
-          </div>
-        </div>
-      `).join('');
-
-    // Re-attach dismiss handlers after each redraw
-    section.querySelectorAll('[data-alert-dismiss]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        dismissed.add(btn.dataset.alertDismiss);
-        redraw();
-      });
-    });
-  };
-
-  redraw();
-}
-
-/**
  * Maps a work-order type string to a badge HTML string.
  * @param {string} type
  * @returns {string}
@@ -230,31 +185,6 @@ function renderVehiclesAttention(vehiclesAttentionData) {
 }
 
 /**
- * Renders upcoming maintenance list into #upcoming-maintenance-list.
- * @param {Array} upcomingMaintenanceData
- */
-function renderUpcomingMaintenance(upcomingMaintenanceData) {
-  const list = document.getElementById('upcoming-maintenance-list');
-  if (!list) return;
-
-  if (!upcomingMaintenanceData || upcomingMaintenanceData.length === 0) {
-    list.innerHTML = `<li class="maint-empty">No upcoming maintenance scheduled.</li>`;
-    return;
-  }
-
-  list.innerHTML = upcomingMaintenanceData.map(({ type, vehicleId, woId, status }) => `
-    <li class="maint-item">
-      <span class="maint-type-badge ${type}">${type.charAt(0).toUpperCase() + type.slice(1)}</span>
-      <div class="maint-item-body">
-        <span class="maint-vehicle-id">${vehicleId}</span>
-        <span class="maint-wo-id">${woId}</span>
-      </div>
-      <span class="maint-status-badge ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
-    </li>
-  `).join('');
-}
-
-/**
  * Wires up the notification bell button.
  */
 function initNotificationBell() {
@@ -278,16 +208,12 @@ function initNotificationBell() {
 export function initDashboard() {
   // Show loading skeletons while we wait for the API
   const kpiGrid    = document.getElementById('kpi-grid');
-  const alertsSec  = document.getElementById('alerts-section');
   const wTbody     = document.getElementById('wo-tbody');
   const vList      = document.getElementById('vehicles-attention-list');
-  const mList      = document.getElementById('upcoming-maintenance-list');
 
   showLoading(kpiGrid,   'Loading KPIs…');
-  showLoading(alertsSec, 'Loading alerts…');
   if (wTbody) wTbody.innerHTML = `<tr><td colspan="6" class="dashboard-loading">Loading work orders…</td></tr>`;
   showLoading(vList, 'Loading vehicles…');
-  showLoading(mList, 'Loading schedule…');
 
   // Wire up notification bell immediately (no API dependency)
   initNotificationBell();
@@ -295,24 +221,18 @@ export function initDashboard() {
   DashboardApi.getDashboardData()
     .then(({
       kpiData,
-      alertsData,
       workOrdersData,
       vehiclesAttentionData,
-      upcomingMaintenanceData,
     }) => {
       renderKPICards(kpiData);
-      renderAlerts(alertsData);
       renderWorkOrdersTable(workOrdersData);
       renderVehiclesAttention(vehiclesAttentionData);
-      renderUpcomingMaintenance(upcomingMaintenanceData);
     })
     .catch((err) => {
       console.error('[Dashboard] initDashboard() failed:', err);
       showError(kpiGrid,   'Failed to load dashboard data.');
-      showError(alertsSec, '');
       if (wTbody) wTbody.innerHTML = `<tr><td colspan="6" class="dashboard-error">Failed to load work orders.</td></tr>`;
       showError(vList, 'Failed to load vehicles.');
-      showError(mList, 'Failed to load schedule.');
     });
 }
 
