@@ -1,4 +1,18 @@
-import client, { unwrap } from "../api-client.js";
+import api from "/shared/api-handler.js";
+import { FUEL_STORAGE_KEY, fuelMockData } from "../storage/fuel.js";
+
+const BASE_URL = "http://localhost:8000";
+
+function unwrap(res) {
+    if (res && res.success !== undefined) {
+        // Handle Laravel paginated responses
+        if (res.data && Array.isArray(res.data.data)) {
+            return res.data.data;
+        }
+        return res.data;
+    }
+    return res;
+}
 
 const BASE = "/api/v1/analytics/fuel";
 
@@ -54,7 +68,7 @@ async function _findActiveRange() {
 
     for (const range of candidates) {
         try {
-            const { data } = await client.get(`${BASE}/audit`, { params: range });
+            const { data } = await api.get(`${BASE}/audit`, { params: range, baseURL: BASE_URL });
             const rows = data?.rows ?? [];
             if (rows.length > 0) return range;
         } catch { /* try next */ }
@@ -93,68 +107,105 @@ function normalizeEfficiencyRow(raw) {
 }
 
 async function getFuelAudit(params = {}) {
-    const range = Object.keys(params).length ? params : await _findActiveRange();
-    const { data } = await client.get(`${BASE}/audit`, { params: range });
-    const rows = data?.rows ?? unwrap(data);
-    return {
-        rows:            rows.map(normalizeAuditRow),
-        vehiclesTracked: data?.vehicles_tracked ?? rows.length,
-        flaggedCount:    data?.flagged_count    ?? 0,
-    };
+    try {
+        const range = Object.keys(params).length ? params : await _findActiveRange();
+        const { data } = await api.get(`${BASE}/audit`, { params: range, baseURL: BASE_URL });
+        const rows = data?.rows ?? unwrap(data);
+        return {
+            rows:            rows.map(normalizeAuditRow),
+            vehiclesTracked: data?.vehicles_tracked ?? rows.length,
+            flaggedCount:    data?.flagged_count    ?? 0,
+        };
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        const stored = localStorage.getItem(FUEL_STORAGE_KEY);
+        const fuelData = stored ? JSON.parse(stored) : fuelMockData;
+        return {
+            rows: fuelData.records,
+            vehiclesTracked: fuelData.records.length,
+            flaggedCount: fuelData.records.filter(r => r.actualFuelLiters > r.expectedFuelLiters * 1.1).length
+        };
+    }
 }
 
 async function getFuelEfficiency(params = {}) {
-    const range = Object.keys(params).length ? params : await _findActiveRange();
-    const { data } = await client.get(`${BASE}/efficiency`, { params: range });
-    const rows = data?.table ?? unwrap(data);
-    return {
-        rows:            rows.map(normalizeEfficiencyRow),
-        fleetAverage:    Number(data?.fleet_average_km_per_litre ?? 0),
-        mostEfficient:   data?.most_efficient  ?? null,
-        leastEfficient:  data?.least_efficient ?? null,
-        vehiclesTracked: data?.vehicles_tracked ?? rows.length,
-    };
+    try {
+        const range = Object.keys(params).length ? params : await _findActiveRange();
+        const { data } = await api.get(`${BASE}/efficiency`, { params: range, baseURL: BASE_URL });
+        const rows = data?.table ?? unwrap(data);
+        return {
+            rows:            rows.map(normalizeEfficiencyRow),
+            fleetAverage:    Number(data?.fleet_average_km_per_litre ?? 0),
+            mostEfficient:   data?.most_efficient  ?? null,
+            leastEfficient:  data?.least_efficient ?? null,
+            vehiclesTracked: data?.vehicles_tracked ?? rows.length,
+        };
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        const stored = localStorage.getItem(FUEL_STORAGE_KEY);
+        const fuelData = stored ? JSON.parse(stored) : fuelMockData;
+        return {
+            rows: fuelData.records,
+            fleetAverage: fuelData.records.reduce((acc, r) => acc + r.avgEfficiencyKmL, 0) / (fuelData.records.length || 1),
+            mostEfficient: fuelData.records.reduce((prev, current) => (prev.avgEfficiencyKmL > current.avgEfficiencyKmL) ? prev : current),
+            leastEfficient: fuelData.records.reduce((prev, current) => (prev.avgEfficiencyKmL < current.avgEfficiencyKmL) ? prev : current),
+            vehiclesTracked: fuelData.records.length,
+        };
+    }
 }
 
 async function getFuelState(params = {}) {
-    // Auto-detect the most recent period that has data
-    const range = Object.keys(params).length ? params : await _findActiveRange();
+    try {
+        // Auto-detect the most recent period that has data
+        const range = Object.keys(params).length ? params : await _findActiveRange();
 
-    // Derive a YYYY-MM period key from the range for records that lack one
-    const periodKey = _parsePeriod(range.period_start);
+        // Derive a YYYY-MM period key from the range for records that lack one
+        const periodKey = _parsePeriod(range.period_start);
 
-    const [auditRes, effRes] = await Promise.all([
-        client.get(`${BASE}/audit`,      { params: range }),
-        client.get(`${BASE}/efficiency`, { params: range }),
-    ]);
+        const [auditRes, effRes] = await Promise.all([
+            api.get(`${BASE}/audit`,      { params: range, baseURL: BASE_URL }),
+            api.get(`${BASE}/efficiency`, { params: range, baseURL: BASE_URL }),
+        ]);
 
-    const auditRows = (auditRes.data?.rows  ?? unwrap(auditRes.data)).map(normalizeAuditRow);
-    const effRows   = (effRes.data?.table   ?? unwrap(effRes.data)).map((r) => ({
-        ...normalizeEfficiencyRow(r),
-        // Efficiency rows don't carry a period — inject it from the range
-        period: periodKey,
-    }));
+        const auditRows = (auditRes.data?.rows  ?? unwrap(auditRes.data)).map(normalizeAuditRow);
+        const effRows   = (effRes.data?.table   ?? unwrap(effRes.data)).map((r) => ({
+            ...normalizeEfficiencyRow(r),
+            // Efficiency rows don't carry a period — inject it from the range
+            period: periodKey,
+        }));
 
-    const auditByPlate = Object.fromEntries(auditRows.map((r) => [r.vehiclePlate, r]));
-    const records = effRows.map((r) => ({
-        ...r,
-        expectedFuelLiters: auditByPlate[r.vehiclePlate]?.expectedFuelLiters ?? r.expectedFuelLiters,
-        actualFuelLiters:   auditByPlate[r.vehiclePlate]?.actualFuelLiters   ?? r.actualFuelLiters,
-    }));
+        const auditByPlate = Object.fromEntries(auditRows.map((r) => [r.vehiclePlate, r]));
+        const records = effRows.map((r) => ({
+            ...r,
+            expectedFuelLiters: auditByPlate[r.vehiclePlate]?.expectedFuelLiters ?? r.expectedFuelLiters,
+            actualFuelLiters:   auditByPlate[r.vehiclePlate]?.actualFuelLiters   ?? r.actualFuelLiters,
+        }));
 
-    // Also include audit-only rows (vehicles with fuel logs but no GPS routes)
-    const effPlates = new Set(effRows.map(r => r.vehiclePlate));
-    const auditOnly = auditRows
-        .filter(r => !effPlates.has(r.vehiclePlate))
-        .map(r => ({ ...r, period: r.period || periodKey }));
+        // Also include audit-only rows (vehicles with fuel logs but no GPS routes)
+        const effPlates = new Set(effRows.map(r => r.vehiclePlate));
+        const auditOnly = auditRows
+            .filter(r => !effPlates.has(r.vehiclePlate))
+            .map(r => ({ ...r, period: r.period || periodKey }));
 
-    return {
-        records:        [...records, ...auditOnly],
-        invoices:       [],
-        fleetAverage:   Number(effRes.data?.fleet_average_km_per_litre ?? 0),
-        mostEfficient:  effRes.data?.most_efficient  ?? null,
-        leastEfficient: effRes.data?.least_efficient ?? null,
-    };
+        return {
+            records:        [...records, ...auditOnly],
+            invoices:       [],
+            fleetAverage:   Number(effRes.data?.fleet_average_km_per_litre ?? 0),
+            mostEfficient:  effRes.data?.most_efficient  ?? null,
+            leastEfficient: effRes.data?.least_efficient ?? null,
+        };
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        const stored = localStorage.getItem(FUEL_STORAGE_KEY);
+        const fuelData = stored ? JSON.parse(stored) : fuelMockData;
+        return {
+            records: fuelData.records,
+            invoices: fuelData.invoices || [],
+            fleetAverage: fuelData.records.reduce((acc, r) => acc + r.avgEfficiencyKmL, 0) / (fuelData.records.length || 1),
+            mostEfficient: fuelData.records.reduce((prev, current) => (prev.avgEfficiencyKmL > current.avgEfficiencyKmL) ? prev : current),
+            leastEfficient: fuelData.records.reduce((prev, current) => (prev.avgEfficiencyKmL < current.avgEfficiencyKmL) ? prev : current)
+        };
+    }
 }
 
 async function getFuelRecords(params = {}) {
@@ -162,29 +213,52 @@ async function getFuelRecords(params = {}) {
 }
 
 async function createFuelInvoice(invoiceData) {
-    const { data } = await client.post(`${BASE}/invoices`, {
-        vehicle_plate:  invoiceData.vehiclePlate,
-        fill_date:      invoiceData.fillDate,
-        liters_filled:  invoiceData.litersFilled,
-        total_cost_egp: invoiceData.totalCostEgp,
-        odometer_km:    invoiceData.odometerKm,
-        supplier:       invoiceData.supplier ?? null,
-    });
+    try {
+        const { data } = await api.post(`${BASE}/invoices`, {
+            vehicle_plate:  invoiceData.vehiclePlate,
+            fill_date:      invoiceData.fillDate,
+            liters_filled:  invoiceData.litersFilled,
+            total_cost_egp: invoiceData.totalCostEgp,
+            odometer_km:    invoiceData.odometerKm,
+            supplier:       invoiceData.supplier ?? null,
+        }, { baseURL: BASE_URL });
 
-    const raw = unwrap(data);
-    return {
-        invoice: {
-            id:           raw.fuel_log_id ?? raw.id ?? `INV-${Date.now()}`,
+        const raw = unwrap(data);
+        return {
+            invoice: {
+                id:           raw.fuel_log_id ?? raw.id ?? `INV-${Date.now()}`,
+                vehiclePlate: invoiceData.vehiclePlate,
+                fillDate:     invoiceData.fillDate,
+                litersFilled: invoiceData.litersFilled,
+                totalCostEgp: invoiceData.totalCostEgp,
+                odometerKm:   invoiceData.odometerKm,
+                supplier:     invoiceData.supplier ?? "Direct Entry",
+                period:       String(invoiceData.fillDate ?? "").slice(0, 7),
+            },
+            record: null,
+        };
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        const stored = localStorage.getItem(FUEL_STORAGE_KEY);
+        const fuelData = stored ? JSON.parse(stored) : { ...fuelMockData };
+        
+        const newInvoice = {
+            id: `INV-${Date.now()}`,
             vehiclePlate: invoiceData.vehiclePlate,
-            fillDate:     invoiceData.fillDate,
+            fillDate: invoiceData.fillDate,
             litersFilled: invoiceData.litersFilled,
             totalCostEgp: invoiceData.totalCostEgp,
-            odometerKm:   invoiceData.odometerKm,
-            supplier:     invoiceData.supplier ?? "Direct Entry",
-            period:       String(invoiceData.fillDate ?? "").slice(0, 7),
-        },
-        record: null,
-    };
+            odometerKm: invoiceData.odometerKm,
+            supplier: invoiceData.supplier ?? "Direct Entry",
+            period: String(invoiceData.fillDate ?? "").slice(0, 7),
+        };
+        
+        if (!fuelData.invoices) fuelData.invoices = [];
+        fuelData.invoices.push(newInvoice);
+        localStorage.setItem(FUEL_STORAGE_KEY, JSON.stringify(fuelData));
+        
+        return { invoice: newInvoice, record: null };
+    }
 }
 
 const FuelApi = {

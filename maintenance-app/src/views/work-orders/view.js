@@ -7,6 +7,8 @@ const PAGE_SIZE = 8;
 // ─── State ───────────────────────────────────────────────────────────────────
 
 let state = { search: "", status: "", type: "", page: 1 };
+let isLoading = false;
+let hasError = false;
 
 // ─── Pill helpers ─────────────────────────────────────────────────────────────
 
@@ -76,6 +78,43 @@ function renderTable() {
     const label = document.getElementById("wo-showing-label");
     const total = document.getElementById("wo-total-label");
     if (!tbody) return;
+
+    if (isLoading || hasError) {
+        if (label) label.textContent = isLoading ? "Loading..." : "Error loading work orders";
+        if (total) total.textContent = "";
+        
+        if (isLoading) {
+            tbody.innerHTML = Array(4).fill(`
+                <tr class="wo-skeleton-row">
+                    <td class="wo-td"><div class="wo-skeleton wo-skeleton--checkbox"></div></td>
+                    <td class="wo-td"><div class="wo-skeleton wo-skeleton--text-short"></div></td>
+                    <td class="wo-td"><div class="wo-skeleton wo-skeleton--text"></div></td>
+                    <td class="wo-td"><div class="wo-skeleton wo-skeleton--pill"></div></td>
+                    <td class="wo-td"><div class="wo-skeleton wo-skeleton--text-long"></div></td>
+                    <td class="wo-td"><div class="wo-skeleton wo-skeleton--pill"></div></td>
+                    <td class="wo-td"><div class="wo-skeleton wo-skeleton--pill"></div></td>
+                    <td class="wo-td"><div class="wo-skeleton wo-skeleton--text-long"></div></td>
+                    <td class="wo-td"><div class="wo-skeleton wo-skeleton--text"></div></td>
+                    <td class="wo-td"><div class="wo-skeleton wo-skeleton--text-short"></div></td>
+                    <td class="wo-td"><div class="wo-skeleton wo-skeleton--text-short"></div></td>
+                    <td class="wo-td"><div class="wo-skeleton wo-skeleton--button"></div></td>
+                </tr>
+            `).join("");
+        } else if (hasError) {
+            tbody.innerHTML = `
+                <tr>
+                    <td class="wo-empty" colspan="12">
+                        <div class="wo-error-state stack" style="align-items: center; padding: 2rem;">
+                            <p>Failed to load work orders.</p>
+                            <button class="wo-btn wo-btn--primary" id="wo-retry-btn">Retry</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        renderPagination(0, 0);
+        return;
+    }
 
     const orders = filteredOrders(allOrders);
     const totalN = orders.length;
@@ -166,14 +205,33 @@ function renderPagination(total, current) {
 
 let mountedCleanup = [];
 
-export async function mount() {
+async function loadOrders() {
+    isLoading = true;
+    hasError = false;
+    renderTable();
+
+    try {
+        allOrders = await WorkOrdersApi.getAllOrders();
+    } catch (err) {
+        console.error("[WorkOrders] fetch failed", err);
+        hasError = true;
+        allOrders = [];
+    } finally {
+        isLoading = false;
+        renderTable();
+    }
+}
+
+export function mount() {
     state = { search: "", status: "", type: "", page: 1 };
     cleanupFns = [];
     mountedCleanup = [];
     allOrders = [];
+    isLoading = false;
+    hasError = false;
 
-    allOrders = await WorkOrdersApi.getAllOrders();
-    renderTable();
+    // We don't await this so it fires immediately and returns control
+    loadOrders();
 
     const searchInput = document.getElementById("wo-search-input");
     if (searchInput) {
@@ -181,6 +239,15 @@ export async function mount() {
         searchInput.addEventListener("input", handler);
         mountedCleanup.push(() => searchInput.removeEventListener("input", handler));
     }
+
+    // Bind retry button dynamically since it appears inside the table
+    const clickHandler = e => {
+        if (e.target && e.target.id === "wo-retry-btn") {
+            loadOrders();
+        }
+    };
+    document.addEventListener("click", clickHandler);
+    mountedCleanup.push(() => document.removeEventListener("click", clickHandler));
 
     const statusFilter = document.getElementById("wo-status-filter");
     if (statusFilter) {
@@ -215,4 +282,6 @@ export function unmount() {
     mountedCleanup = [];
 
     allOrders = [];
+    isLoading = false;
+    hasError = false;
 }

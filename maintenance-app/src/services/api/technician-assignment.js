@@ -1,4 +1,18 @@
-import client, { unwrap } from "../api-client.js";
+import api from "/shared/api-handler.js";
+import { MECHANICS, WORK_ORDERS_STORAGE_KEY, workOrdersMockData } from "../storage/work-orders.js";
+
+const BASE_URL = "http://localhost:8000";
+
+function unwrap(res) {
+    if (res && res.success !== undefined) {
+        // Handle Laravel paginated responses
+        if (res.data && Array.isArray(res.data.data)) {
+            return res.data.data;
+        }
+        return res.data;
+    }
+    return res;
+}
 
 const WO_BASE       = "/api/v1/maintenance/work-orders";
 const MECHANICS_URL = "/api/v1/users/role/mechanics";
@@ -8,10 +22,10 @@ function normalizeWorkOrder(raw) {
     const type    = typeMap[raw.type?.toLowerCase()] ?? raw.type ?? "Routine";
     return {
         id:          String(raw.work_order_id ?? raw.id ?? ""),
-        vehicle:     raw.vehicle?.VehicleLicense ?? raw.vehicle_plate ?? (raw.vehicle_id ? `#${raw.vehicle_id}` : "Unknown"),
-        date:        raw.opened_at ?? raw.created_at ?? "—",
+        vehicle:     raw.vehicle?.VehicleLicense ?? raw.vehicle_plate ?? (raw.vehicle_id ? `#${raw.vehicle_id}` : raw.vehicle ?? "Unknown"),
+        date:        raw.opened_at ?? raw.created_at ?? raw.opened ?? "—",
         type,
-        priority:    (raw.priority === "high" || raw.priority === "critical" || type === "Emergency") ? "Urgent" : "Normal",
+        priority:    (raw.priority === "high" || raw.priority === "critical" || type === "Emergency" || raw.priority === "Urgent") ? "Urgent" : "Normal",
         description: raw.description ?? raw.notes ?? "No description provided.",
     };
 }
@@ -30,22 +44,63 @@ function normalizeMechanic(raw) {
 }
 
 async function getUnassignedWorkOrders() {
-    const { data } = await client.get(`${WO_BASE}/open`);
-    return unwrap(data)
-        .filter((o) => !o.mechanic_id)
-        .map(normalizeWorkOrder);
+    try {
+        const { data } = await api.get(`${WO_BASE}/open`, { baseURL: BASE_URL });
+        return unwrap(data)
+            .filter((o) => !o.mechanic_id)
+            .map(normalizeWorkOrder);
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        const stored = localStorage.getItem(WORK_ORDERS_STORAGE_KEY);
+        const orders = stored ? JSON.parse(stored) : [...workOrdersMockData];
+        return orders
+            .filter((o) => !o.mechanic_id && o.status !== "Closed")
+            .map(normalizeWorkOrder);
+    }
 }
 
 async function getMechanicRoster() {
-    const { data } = await client.get(MECHANICS_URL);
-    return unwrap(data).map(normalizeMechanic);
+    try {
+        const { data } = await api.get(MECHANICS_URL, { baseURL: BASE_URL });
+        return unwrap(data).map(normalizeMechanic);
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        return MECHANICS.map((m, i) => ({
+            id: i + 1,
+            name: m.name,
+            initials: m.initials,
+            specialty: "General",
+            activeJobs: 0,
+            status: "Available"
+        })).filter(m => m.name !== "Unassigned");
+    }
 }
 
 async function assignWorkOrder(workOrderId, mechanicId) {
-    const { data } = await client.post(`${WO_BASE}/${workOrderId}/assign`, {
-        mechanic_id: mechanicId,
-    });
-    return data;
+    try {
+        const { data } = await api.post(`${WO_BASE}/${workOrderId}/assign`, {
+            mechanic_id: mechanicId,
+        }, { baseURL: BASE_URL });
+        return data;
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        const stored = localStorage.getItem(WORK_ORDERS_STORAGE_KEY);
+        const orders = stored ? JSON.parse(stored) : [...workOrdersMockData];
+        const index = orders.findIndex(o => o.id === String(workOrderId));
+        if (index > -1) {
+            const mechanicMatch = MECHANICS[mechanicId - 1] || MECHANICS[0];
+            orders[index] = { 
+                ...orders[index], 
+                mechanic_id: mechanicId, 
+                mechanic: { name: mechanicMatch.name, initials: mechanicMatch.initials, avatarClass: mechanicMatch.avatarClass },
+                updated: "Today",
+                status: orders[index].status === "Open" ? "Assigned" : orders[index].status
+            };
+            localStorage.setItem(WORK_ORDERS_STORAGE_KEY, JSON.stringify(orders));
+            return { success: true, data: orders[index] };
+        }
+        throw new Error("Order not found in local storage");
+    }
 }
 
 const TechnicianAssignmentApi = {

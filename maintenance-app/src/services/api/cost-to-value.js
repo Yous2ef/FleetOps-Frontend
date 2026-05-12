@@ -1,4 +1,18 @@
-import client, { unwrap } from "../api-client.js";
+import api from "/shared/api-handler.js";
+import { ctvMockVehicles } from "../storage/cost-to-value.js";
+
+const BASE_URL = "http://localhost:8000";
+
+function unwrap(res) {
+    if (res && res.success !== undefined) {
+        // Handle Laravel paginated responses
+        if (res.data && Array.isArray(res.data.data)) {
+            return res.data.data;
+        }
+        return res.data;
+    }
+    return res;
+}
 
 const VEHICLES_URL = "/api/v1/dispatch/vehicles";
 const WO_BASE      = "/api/v1/maintenance/work-orders";
@@ -56,37 +70,42 @@ const STATUS_DISPLAY = {
 };
 
 async function getAllVehicles() {
-    const { data } = await client.get(VEHICLES_URL);
-    const vehicles = unwrap(data).map(normalizeVehicle);
+    try {
+        const { data } = await api.get(VEHICLES_URL, { baseURL: BASE_URL });
+        const vehicles = unwrap(data).map(normalizeVehicle);
 
-    await Promise.all(
-        vehicles.map(async (v) => {
-            if (!v.vehicle_id) return;
-            try {
-                const { data: woData } = await client.get(`${WO_BASE}/vehicle/${v.vehicle_id}`);
-                const orders = unwrap(woData).map(normalizeWorkOrder);
+        await Promise.all(
+            vehicles.map(async (v) => {
+                if (!v.vehicle_id) return;
+                try {
+                    const { data: woData } = await api.get(`${WO_BASE}/vehicle/${v.vehicle_id}`, { baseURL: BASE_URL });
+                    const orders = unwrap(woData).map(normalizeWorkOrder);
 
-                v.totalRepairCostEgp = orders.reduce((sum, o) => sum + o.repairCostEgp, 0);
-                v.maintenanceHistory = orders.map((o) => ({
-                    id:            o.id,
-                    type:          o.type.charAt(0).toUpperCase() + o.type.slice(1),
-                    mechanic:      o.mechanic,
-                    status:        STATUS_DISPLAY[o.status] ?? o.status,
-                    repairCostEgp: o.repairCostEgp || null,
-                    opened:        o.opened,
-                    closed:        o.closed,
-                }));
+                    v.totalRepairCostEgp = orders.reduce((sum, o) => sum + o.repairCostEgp, 0);
+                    v.maintenanceHistory = orders.map((o) => ({
+                        id:            o.id,
+                        type:          o.type.charAt(0).toUpperCase() + o.type.slice(1),
+                        mechanic:      o.mechanic,
+                        status:        STATUS_DISPLAY[o.status] ?? o.status,
+                        repairCostEgp: o.repairCostEgp || null,
+                        opened:        o.opened,
+                        closed:        o.closed,
+                    }));
 
-                const closedWithCost = orders.filter((o) => o.repairCostEgp > 0 && o.closed);
-                if (closedWithCost.length) {
-                    v.lastMajorRepair = closedWithCost
-                        .sort((a, b) => new Date(b.closed) - new Date(a.closed))[0].closed;
-                }
-            } catch { /* vehicle may have no orders */ }
-        })
-    );
+                    const closedWithCost = orders.filter((o) => o.repairCostEgp > 0 && o.closed);
+                    if (closedWithCost.length) {
+                        v.lastMajorRepair = closedWithCost
+                            .sort((a, b) => new Date(b.closed) - new Date(a.closed))[0].closed;
+                    }
+                } catch { /* vehicle may have no orders */ }
+            })
+        );
 
-    return vehicles.map(enrichVehicle).sort((a, b) => b.ctvRatio - a.ctvRatio);
+        return vehicles.map(enrichVehicle).sort((a, b) => b.ctvRatio - a.ctvRatio);
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        return ctvMockVehicles.map(enrichVehicle).sort((a, b) => b.ctvRatio - a.ctvRatio);
+    }
 }
 
 async function getVehicleByPlate(plate) {

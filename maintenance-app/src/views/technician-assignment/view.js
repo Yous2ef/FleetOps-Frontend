@@ -355,12 +355,28 @@ function renderPage() {
     renderModal();
 }
 
+function renderAndRefreshIcons() {
+    renderPage();
+    if (typeof lucide !== "undefined") {
+        lucide.createIcons();
+    }
+}
+
+function extractErrorMessage(error, fallback) {
+    return (
+        error?.data?.message ||
+        (error?.data?.errors && Object.values(error.data.errors).flat().join(" ")) ||
+        error?.message ||
+        fallback
+    );
+}
+
 async function loadPageData() {
     const loadId = ++activeLoadId;
 
     state.loading = true;
     state.error = "";
-    renderPage();
+    renderAndRefreshIcons();
 
     try {
         const [workOrders, mechanics] = await Promise.all([
@@ -387,16 +403,13 @@ async function loadPageData() {
             return;
         }
 
-        state.error =
-            error?.data?.message ||
-            error?.message ||
-            "Could not load technician assignment data.";
+        state.error = extractErrorMessage(error, "Could not load technician assignment data.");
         state.workOrders = [];
         state.mechanics = [];
     } finally {
         if (loadId === activeLoadId) {
             state.loading = false;
-            renderPage();
+            renderAndRefreshIcons();
         }
     }
 }
@@ -411,7 +424,7 @@ async function confirmAssignment() {
 
     state.saving = true;
     state.error = "";
-    renderPage();
+    renderAndRefreshIcons();
 
     try {
         await TechnicianAssignmentApi.assignWorkOrder(
@@ -437,14 +450,13 @@ async function confirmAssignment() {
 
         state.selectedWorkOrderId = "";
         state.selectedMechanicId = "";
+        
+        loadPageData(); // re-sync from API in background
     } catch (error) {
-        state.error =
-            error?.data?.message ||
-            error?.message ||
-            "Could not assign technician. Please retry.";
+        state.error = extractErrorMessage(error, "Could not assign technician. Please retry.");
     } finally {
         state.saving = false;
-        renderPage();
+        renderAndRefreshIcons();
     }
 }
 
@@ -462,7 +474,7 @@ function handlePageClick(event) {
     if (closeModalButton) {
         if (!state.saving) {
             state.selectedMechanicId = "";
-            renderPage();
+            renderAndRefreshIcons();
         }
         return;
     }
@@ -471,7 +483,7 @@ function handlePageClick(event) {
         if (!assignButton.disabled) {
             state.selectedMechanicId =
                 assignButton.dataset.assignMechanicId || "";
-            renderPage();
+            renderAndRefreshIcons();
         }
         return;
     }
@@ -484,14 +496,14 @@ function handlePageClick(event) {
             state.selectedWorkOrderId = clickedId;
         }
         state.selectedMechanicId = "";
-        renderPage();
+        renderAndRefreshIcons();
     }
 }
 
 function handlePageKeydown(event) {
     if (event.key === "Escape" && state.selectedMechanicId && !state.saving) {
         state.selectedMechanicId = "";
-        renderPage();
+        renderAndRefreshIcons();
         return;
     }
 
@@ -513,7 +525,7 @@ function handlePageKeydown(event) {
         state.selectedWorkOrderId = clickedId;
     }
     state.selectedMechanicId = "";
-    renderPage();
+    renderAndRefreshIcons();
 }
 
 export function mount(outlet) {

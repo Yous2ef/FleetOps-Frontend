@@ -1,8 +1,22 @@
-import client, { unwrap } from "../api-client.js";
+import api from "/shared/api-handler.js";
+import { MECHANICS, VEHICLES, WORK_ORDERS_STORAGE_KEY, workOrdersMockData } from "../storage/work-orders.js";
 
-const BASE          = "/api/v1/maintenance/work-orders";
-const VEHICLES_URL  = "/api/v1/dispatch/vehicles";
-const MECHANICS_URL = "/api/v1/users/role/mechanics";
+const BASE_URL = "http://localhost:8000";
+
+function unwrap(res) {
+    if (res && res.success !== undefined) {
+        // Handle Laravel paginated responses
+        if (res.data && Array.isArray(res.data.data)) {
+            return res.data.data;
+        }
+        return res.data;
+    }
+    return res;
+}
+
+const BASE          = `/api/v1/maintenance/work-orders`;
+const VEHICLES_URL  = `/api/v1/dispatch/vehicles`;
+const MECHANICS_URL = `/api/v1/users/role/mechanics`;
 
 // ─── Field maps ───────────────────────────────────────────────────────────────
 
@@ -110,48 +124,147 @@ function _fmtRelative(value) {
 // ─── API Methods ──────────────────────────────────────────────────────────────
 
 async function getAllOrders() {
-    const { data } = await client.get(BASE);
-    return unwrap(data).map(normalizeOrder);
+    try {
+        const { data } = await api.get(BASE, { baseURL: BASE_URL });
+        return unwrap(data).map(normalizeOrder);
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        const stored = localStorage.getItem(WORK_ORDERS_STORAGE_KEY);
+        if (stored) return JSON.parse(stored);
+        return workOrdersMockData;
+    }
 }
 
 async function getOrderById(id) {
-    const { data } = await client.get(`${BASE}/${id}`);
-    return normalizeOrder(unwrap(data));
+    try {
+        const { data } = await api.get(`${BASE}/${id}`, { baseURL: BASE_URL });
+        return normalizeOrder(unwrap(data));
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        const stored = localStorage.getItem(WORK_ORDERS_STORAGE_KEY);
+        const orders = stored ? JSON.parse(stored) : [...workOrdersMockData];
+        const order = orders.find(o => o.id === String(id));
+        if (order) return order;
+        throw new Error("Order not found in local storage");
+    }
 }
 
 async function getVehicles() {
-    const { data } = await client.get(VEHICLES_URL);
-    return unwrap(data).map(normalizeVehicle);
+    try {
+        const { data } = await api.get(VEHICLES_URL, { baseURL: BASE_URL });
+        return unwrap(data).map(normalizeVehicle);
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        return VEHICLES.map((v, i) => ({
+            id: v.plate || i + 1,
+            plate: v.plate,
+            category: v.category,
+            model: v.model,
+            status: v.status
+        }));
+    }
 }
 
 async function getMechanics() {
-    const { data } = await client.get(MECHANICS_URL);
-    return unwrap(data).map(normalizeMechanicUser);
+    try {
+        const { data } = await api.get(MECHANICS_URL, { baseURL: BASE_URL });
+        return unwrap(data).map(normalizeMechanicUser);
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        return MECHANICS.map((m, i) => ({
+            id: i + 1,
+            name: m.name,
+            initials: m.initials,
+            avatarClass: m.avatarClass,
+            role: "mechanic",
+            isActive: true
+        }));
+    }
 }
 
 async function createOrder(payload) {
-    const vehicles = await getVehicles();
-    const vehicle  = vehicles.find((v) => v.plate === payload.vehicle);
+    try {
+        const vehicles = await getVehicles();
+        const vehicle  = vehicles.find((v) => v.plate === payload.vehicle);
 
-    const { data } = await client.post(BASE, {
-        vehicle_id:  vehicle?.id ?? payload.vehicle,
-        type:        TYPE_TO_BACKEND[payload.type]         ?? (payload.type ?? "routine").toLowerCase(),
-        description: payload.description,
-        priority:    PRIORITY_TO_BACKEND[payload.priority] ?? "medium",
-        notes:       payload.startDate ? `Start date: ${payload.startDate}` : undefined,
-    });
-    return normalizeOrder(unwrap(data));
+        const { data } = await api.post(BASE, {
+            vehicle_id:  vehicle?.id ?? payload.vehicle,
+            type:        TYPE_TO_BACKEND[payload.type]         ?? (payload.type ?? "routine").toLowerCase(),
+            description: payload.description,
+            priority:    PRIORITY_TO_BACKEND[payload.priority] ?? "medium",
+            notes:       payload.startDate ? `Start date: ${payload.startDate}` : undefined,
+        }, { baseURL: BASE_URL });
+        return normalizeOrder(unwrap(data));
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        const newOrder = {
+            id: "WO-" + Date.now().toString().slice(-4),
+            vehicle: payload.vehicle,
+            vehicle_id: payload.vehicle,
+            type: payload.type || "Routine",
+            mechanic: { name: "Unassigned", initials: "UN", avatarClass: "wo-avatar--un" },
+            mechanic_id: null,
+            status: "Open",
+            priority: payload.priority || "Normal",
+            description: payload.description || "",
+            cost: "—",
+            partsCost: 0,
+            laborCost: 0,
+            logs: [],
+            parts: [],
+            opened: _fmtDate(new Date()),
+            updated: "Today"
+        };
+        const stored = localStorage.getItem(WORK_ORDERS_STORAGE_KEY);
+        const orders = stored ? JSON.parse(stored) : [...workOrdersMockData];
+        orders.unshift(newOrder);
+        localStorage.setItem(WORK_ORDERS_STORAGE_KEY, JSON.stringify(orders));
+        return newOrder;
+    }
 }
 
 async function updateOrderStatus(id, status) {
-    const backendStatus = STATUS_TO_BACKEND[status] ?? status.toLowerCase().replace(" ", "_");
-    const { data } = await client.patch(`${BASE}/${id}/status`, { status: backendStatus });
-    return normalizeOrder(unwrap(data));
+    try {
+        const backendStatus = STATUS_TO_BACKEND[status] ?? status.toLowerCase().replace(" ", "_");
+        const { data } = await api.patch(`${BASE}/${id}/status`, { status: backendStatus }, { baseURL: BASE_URL });
+        return normalizeOrder(unwrap(data));
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        const stored = localStorage.getItem(WORK_ORDERS_STORAGE_KEY);
+        const orders = stored ? JSON.parse(stored) : [...workOrdersMockData];
+        const index = orders.findIndex(o => o.id === String(id));
+        if (index > -1) {
+            orders[index] = { ...orders[index], status: status, updated: "Today" };
+            localStorage.setItem(WORK_ORDERS_STORAGE_KEY, JSON.stringify(orders));
+            return orders[index];
+        }
+        throw new Error("Order not found in local storage");
+    }
 }
 
 async function assignMechanic(workOrderId, mechanicId) {
-    const { data } = await client.post(`${BASE}/${workOrderId}/assign`, { mechanic_id: mechanicId });
-    return normalizeOrder(unwrap(data));
+    try {
+        const { data } = await api.post(`${BASE}/${workOrderId}/assign`, { mechanic_id: mechanicId }, { baseURL: BASE_URL });
+        return normalizeOrder(unwrap(data));
+    } catch (error) {
+        console.warn("API failed, falling back to local storage", error);
+        const stored = localStorage.getItem(WORK_ORDERS_STORAGE_KEY);
+        const orders = stored ? JSON.parse(stored) : [...workOrdersMockData];
+        const index = orders.findIndex(o => o.id === String(workOrderId));
+        if (index > -1) {
+            const mechanicMatch = MECHANICS[mechanicId - 1] || MECHANICS[0];
+            orders[index] = { 
+                ...orders[index], 
+                mechanic_id: mechanicId, 
+                mechanic: { name: mechanicMatch.name, initials: mechanicMatch.initials, avatarClass: mechanicMatch.avatarClass },
+                updated: "Today",
+                status: orders[index].status === "Open" ? "Assigned" : orders[index].status
+            };
+            localStorage.setItem(WORK_ORDERS_STORAGE_KEY, JSON.stringify(orders));
+            return orders[index];
+        }
+        throw new Error("Order not found in local storage");
+    }
 }
 
 // ─── Export ───────────────────────────────────────────────────────────────────

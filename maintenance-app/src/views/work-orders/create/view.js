@@ -9,6 +9,10 @@ async function populateVehicles() {
     const sel = document.getElementById("cwo-vehicle");
     if (!sel) return;
 
+    const originalText = sel.options[0]?.textContent || "Select Vehicle";
+    if (sel.options[0]) sel.options[0].textContent = "Loading vehicles...";
+    sel.disabled = true;
+
     try {
         const vehicles = await WorkOrdersApi.getVehicles();
         vehicles.forEach(v => {
@@ -17,8 +21,13 @@ async function populateVehicles() {
             opt.textContent = `${v.plate} — ${v.category} — ${v.model} (${v.status})`;
             sel.appendChild(opt);
         });
-    } catch {
-        // If API fails, leave the select with just the default empty option
+        if (sel.options[0]) sel.options[0].textContent = originalText;
+    } catch (err) {
+        if (sel.options[0]) sel.options[0].textContent = "Failed to load vehicles";
+        const errSpan = document.getElementById("cwo-vehicle-error");
+        if (errSpan) errSpan.textContent = "Could not load vehicles list.";
+    } finally {
+        sel.disabled = false;
     }
 
     // Pre-select vehicle if passed via query string (e.g. from CTV details page)
@@ -177,17 +186,44 @@ function collectFormData(form) {
 
 // ─── Submit handler ──────────────────────────────────────────────────────────
 function initSubmit(form) {
+    const submitBtn = form.querySelector("button[type='submit']") || form.querySelector(".wod-btn--primary");
+    const errorBanner = document.createElement("div");
+    errorBanner.className = "cwo-form-error";
+    errorBanner.style.color = "var(--color-danger)";
+    errorBanner.style.marginBottom = "16px";
+    errorBanner.style.padding = "12px";
+    errorBanner.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+    errorBanner.style.borderRadius = "6px";
+    errorBanner.style.display = "none";
+    form.prepend(errorBanner);
+
     const onSubmit = async e => {
         e.preventDefault();
+        errorBanner.style.display = "none";
+        errorBanner.textContent = "";
+
         if (!validateForm(form)) return;
 
         const data = collectFormData(form);
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.dataset.originalText = submitBtn.textContent;
+            submitBtn.textContent = "Creating...";
+        }
 
         try {
             await WorkOrdersApi.createOrder(data);
             navigate("/work-orders");
         } catch (err) {
-            alert("Failed to create work order. Please try again.");
+            errorBanner.textContent = err.data?.message || err.message || "Failed to create work order. Please try again.";
+            errorBanner.style.display = "block";
+            errorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = submitBtn.dataset.originalText || "Create Work Order";
+            }
         }
     };
     form.addEventListener("submit", onSubmit);
