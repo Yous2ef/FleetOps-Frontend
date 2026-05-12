@@ -1,4 +1,4 @@
-﻿<section class="view-page notifications-page">
+<section class="view-page notifications-page">
     <header class="notifications-header">
         <div>
             <span class="notifications-badge">Notifications</span>
@@ -7,35 +7,6 @@
         </div>
     </header>
 
-    <div class="notifications-cards">
-        <article class="card notification-card notification-card--alert">
-            <span class="notification-card__label">Emergency</span>
-            <h2 class="notification-card__title">Fuel pump failure reported</h2>
-            <p class="notification-card__body">Vehicle EGY-5678 stalled on route. Tow crew en route now.</p>
-            <div class="notification-card__meta">
-                <span>Today</span>
-                <a href="/work-orders/details?id=WO-2031" class="notification-card__link" data-link>View Details</a>
-            </div>
-        </article>
-
-        <article class="card notification-card notification-card--info">
-            <span class="notification-card__label">Update</span>
-            <h2 class="notification-card__title">Service completed</h2>
-            <p class="notification-card__body">Vehicle EGY-1234 finished scheduled maintenance and is ready for deployment.</p>
-            <div class="notification-card__meta">
-                <span>Yesterday</span>
-                <a href="/work-orders/details?id=WO-2039" class="notification-card__link" data-link>View Details</a>
-            </div>
-        </article>
-
-        <article class="card notification-card notification-card--warning">
-            <span class="notification-card__label">Reminder</span>
-            <h2 class="notification-card__title">Inspection due soon</h2>
-            <p class="notification-card__body">Scheduled inspection for EGY-3456 is due within 2 days.</p>
-            <div class="notification-card__meta">
-                <span>2 days</span>
-                <a href="/work-orders" class="notification-card__link" data-link>View Work Orders</a>
-            </div>
-        </article>
-    </div>
+    <!-- Cards are rendered dynamically by view.js -->
+    <div class="notifications-cards"></div>
 </section>

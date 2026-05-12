@@ -1,6 +1,7 @@
 import { initRouter } from "./router/router.js";
 import { canAccessPath, normalizeRole } from "./router/routes.js";
 import { createIcons, icons } from "/node_modules/lucide/dist/esm/lucide.mjs";
+import { initNotificationPanel } from "./utils/notification-ui.js";
 
 // لو مفيش توكن، ابعته فوراً لصفحة اللوجين قبل ما يرسم أي حاجة
 const token = localStorage.getItem("token");
@@ -90,6 +91,9 @@ if (!token && !isLoginPage) {
 }
 initRouter({ outletId: "app-content" });
 createIcons({ icons });
+
+// Wire the bell button → slide-in notification panel with live backend data
+initNotificationPanel();
 
 window.addEventListener("route:changed", () => {
     createIcons({ icons });

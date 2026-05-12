@@ -306,8 +306,9 @@ function _buildPanel() {
         document.body.appendChild(panel);
     }
 
+    // Cache is populated by the caller (showNotificationPanel calls refresh() first)
     const notifications = NotificationApi.getNotifications();
-    const unreadCount   = notifications.filter((n) => !n.read).length;
+    const unreadCount   = NotificationApi.getUnreadCount();
 
     panel.innerHTML = /* html */ `
         <header class="fo-notif-header">
@@ -411,7 +412,7 @@ function _refreshPanel() {
     if (!panel) return;
 
     const notifications = NotificationApi.getNotifications();
-    const unreadCount   = notifications.filter((n) => !n.read).length;
+    const unreadCount   = NotificationApi.getUnreadCount();
 
     const countEl = panel.querySelector(".fo-notif-count-badge");
     if (countEl) {
@@ -436,24 +437,40 @@ function _refreshBadge() {
     if (!badge) return;
 
     const count = NotificationApi.getUnreadCount();
-    badge.textContent = String(count);
+    badge.textContent = count > 99 ? "99+" : String(count);
     badge.hidden      = count === 0;
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-/** Show the notification panel. */
-export function showNotificationPanel() {
+/**
+ * Show the notification panel.
+ * Fetches fresh data from the backend before rendering.
+ */
+export async function showNotificationPanel() {
     _injectStyles();
-    _buildPanel();
-    _getOrCreateOverlay().style.display = "block";
 
-    // Force reflow so the CSS transition plays from translateX(100%)
+    // Show a loading skeleton while we fetch
+    let panel = document.getElementById(PANEL_ID);
+    if (!panel) {
+        panel = document.createElement("div");
+        panel.id = PANEL_ID;
+        panel.setAttribute("role", "dialog");
+        panel.setAttribute("aria-label", "Notifications");
+        panel.innerHTML = `<div style="padding:32px;text-align:center;color:var(--color-text-muted,#8e98aa);font-size:13px;">Loading…</div>`;
+        document.body.appendChild(panel);
+    }
+    _getOrCreateOverlay().style.display = "block";
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             document.getElementById(PANEL_ID)?.classList.add("is-open");
         });
     });
+
+    // Fetch fresh data, then re-render
+    await NotificationApi.refresh();
+    _buildPanel();
+    _refreshBadge();
 }
 
 /** Hide the notification panel. */
@@ -509,8 +526,8 @@ function _attachBellButton(bellBtn) {
     badge.setAttribute("aria-live", "polite");
     wrapper.appendChild(badge);
 
-    // Seed the badge
-    _refreshBadge();
+    // Seed the badge with live data from backend
+    NotificationApi.refresh().then(() => _refreshBadge());
 
     bellBtn.addEventListener("click", (e) => {
         e.stopPropagation();

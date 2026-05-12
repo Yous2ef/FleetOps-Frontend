@@ -5,6 +5,7 @@ import {
     createIcons,
     icons,
 } from "../../node_modules/lucide/dist/esm/lucide.mjs";
+import { initNotificationPanel } from "./utils/notification-ui.js";
 
 // Check if user is logged in and filter sidebar immediately
 const userRaw = localStorage.getItem("user");
@@ -43,9 +44,10 @@ if (currentUser && currentRole) {
     });
 }
 
-// 1. تهيئة الراوتر والأيقونات
+// 1. تهيئة الراوتر والأيقونات والإشعارات
 initRouter({ outletId: "app-content" });
 createIcons({ icons });
+initNotificationPanel();
 
 // 2. تحديث بيانات المستخدم في الـ Topbar
 function updateUserInfo() {

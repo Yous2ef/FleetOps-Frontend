@@ -254,18 +254,7 @@ function renderUpcomingMaintenance(upcomingMaintenanceData) {
   `).join('');
 }
 
-/**
- * Wires up the notification bell button.
- */
-function initNotificationBell() {
-  document.addEventListener('click', (e) => {
-    const bellButton = e.target.closest('.notif-bell-btn, button:has(.notif-badge), button:has([class*="badge"])');
-    if (bellButton) {
-      e.preventDefault();
-      showNotificationPanel();
-    }
-  });
-}
+
 
 // ─────────────────────────────────────────────────────────────────
 // 4. INIT — called when this view is mounted
@@ -289,8 +278,7 @@ export function initDashboard() {
   showLoading(vList, 'Loading vehicles…');
   showLoading(mList, 'Loading schedule…');
 
-  // Wire up notification bell immediately (no API dependency)
-  initNotificationBell();
+
 
   DashboardApi.getDashboardData()
     .then(({
