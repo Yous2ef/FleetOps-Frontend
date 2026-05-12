@@ -91,6 +91,7 @@ function renderKPICards(kpiData) {
  * @param {Array<{id:string, text:string}>} alertsData
  */
 function renderAlerts(alertsData) {
+  
   const section = document.getElementById('alerts-section');
   if (!section) return;
 
@@ -254,18 +255,7 @@ function renderUpcomingMaintenance(upcomingMaintenanceData) {
   `).join('');
 }
 
-/**
- * Wires up the notification bell button.
- */
-function initNotificationBell() {
-  document.addEventListener('click', (e) => {
-    const bellButton = e.target.closest('.notif-bell-btn, button:has(.notif-badge), button:has([class*="badge"])');
-    if (bellButton) {
-      e.preventDefault();
-      showNotificationPanel();
-    }
-  });
-}
+
 
 // ─────────────────────────────────────────────────────────────────
 // 4. INIT — called when this view is mounted
@@ -284,13 +274,12 @@ export function initDashboard() {
   const mList      = document.getElementById('upcoming-maintenance-list');
 
   showLoading(kpiGrid,   'Loading KPIs…');
-  showLoading(alertsSec, 'Loading alerts…');
+  // showLoading(alertsSec, 'Loading alerts…');
   if (wTbody) wTbody.innerHTML = `<tr><td colspan="6" class="dashboard-loading">Loading work orders…</td></tr>`;
   showLoading(vList, 'Loading vehicles…');
   showLoading(mList, 'Loading schedule…');
 
-  // Wire up notification bell immediately (no API dependency)
-  initNotificationBell();
+
 
   DashboardApi.getDashboardData()
     .then(({
@@ -301,7 +290,7 @@ export function initDashboard() {
       upcomingMaintenanceData,
     }) => {
       renderKPICards(kpiData);
-      renderAlerts(alertsData);
+      // renderAlerts(alertsData);
       renderWorkOrdersTable(workOrdersData);
       renderVehiclesAttention(vehiclesAttentionData);
       renderUpcomingMaintenance(upcomingMaintenanceData);

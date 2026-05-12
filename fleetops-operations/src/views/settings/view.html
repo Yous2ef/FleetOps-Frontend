@@ -240,75 +240,74 @@
             <div class="settings-card">
                 <div class="card-header">
                     <i data-lucide="bell" class="text-primary"></i>
-                    <h3>Notification Preferences</h3>
+                    <div>
+                        <h3>Global Notification Preferences</h3>
+                        <span class="sub-header-text">Manage how you receive alerts and system updates</span>
+                    </div>
                 </div>
-                <div class="table-container">
-                    <table class="settings-table text-center">
-                        <thead>
-                            <tr>
-                                <th style="text-align: left;">Event Type</th>
-                                <th>Push</th>
-                                <th>SMS</th>
-                                <th>Email</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="text-align: left;">Delivery Window Violation</td>
-                                <td><input type="checkbox" data-group="notifications.deliveryWindowViolation"
-                                        data-key="push" class="check-box" /></td>
-                                <td><input type="checkbox" data-group="notifications.deliveryWindowViolation"
-                                        data-key="sms" class="check-box" /></td>
-                                <td><input type="checkbox" data-group="notifications.deliveryWindowViolation"
-                                        data-key="email" class="check-box" /></td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: left;">Vehicle Breakdown</td>
-                                <td><input type="checkbox" data-group="notifications.vehicleBreakdown" data-key="push"
-                                        class="check-box" /></td>
-                                <td><input type="checkbox" data-group="notifications.vehicleBreakdown" data-key="sms"
-                                        class="check-box" /></td>
-                                <td><input type="checkbox" data-group="notifications.vehicleBreakdown" data-key="email"
-                                        class="check-box" /></td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: left;">Route Completed</td>
-                                <td><input type="checkbox" data-group="notifications.routeCompleted" data-key="push"
-                                        class="check-box" /></td>
-                                <td><input type="checkbox" data-group="notifications.routeCompleted" data-key="sms"
-                                        class="check-box" /></td>
-                                <td><input type="checkbox" data-group="notifications.routeCompleted" data-key="email"
-                                        class="check-box" /></td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: left;">Speed Anomaly</td>
-                                <td><input type="checkbox" data-group="notifications.speedAnomaly" data-key="push"
-                                        class="check-box" /></td>
-                                <td><input type="checkbox" data-group="notifications.speedAnomaly" data-key="sms"
-                                        class="check-box" /></td>
-                                <td><input type="checkbox" data-group="notifications.speedAnomaly" data-key="email"
-                                        class="check-box" /></td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: left;">Fuel Discrepancy</td>
-                                <td><input type="checkbox" data-group="notifications.fuelDiscrepancy" data-key="push"
-                                        class="check-box" /></td>
-                                <td><input type="checkbox" data-group="notifications.fuelDiscrepancy" data-key="sms"
-                                        class="check-box" /></td>
-                                <td><input type="checkbox" data-group="notifications.fuelDiscrepancy" data-key="email"
-                                        class="check-box" /></td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: left;">Maintenance Due</td>
-                                <td><input type="checkbox" data-group="notifications.maintenanceDue" data-key="push"
-                                        class="check-box" /></td>
-                                <td><input type="checkbox" data-group="notifications.maintenanceDue" data-key="sms"
-                                        class="check-box" /></td>
-                                <td><input type="checkbox" data-group="notifications.maintenanceDue" data-key="email"
-                                        class="check-box" /></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="settings-form-group">
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>Push Notifications</strong>
+                            <span>Receive alerts directly on your device</span>
+                        </div>
+                        <div class="form-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="pref-push" data-pref="push_enabled">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>Email Notifications</strong>
+                            <span>Receive summaries and critical alerts via email</span>
+                        </div>
+                        <div class="form-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="pref-email" data-pref="email_enabled">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>SMS Notifications</strong>
+                            <span>Receive critical emergencies via SMS</span>
+                        </div>
+                        <div class="form-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="pref-sms" data-pref="sms_enabled">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-header" style="margin-top: 24px; border-top: 1px solid var(--color-border); padding-top: 24px;">
+                    <i data-lucide="moon" class="text-primary"></i>
+                    <div>
+                        <h3>Quiet Hours</h3>
+                        <span class="sub-header-text">Mute all non-emergency notifications during this time</span>
+                    </div>
+                </div>
+                <div class="settings-form-group">
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>Quiet Hours Start</strong>
+                        </div>
+                        <div class="form-control">
+                            <input type="time" id="pref-quiet-start" class="input-field" data-pref="quiet_hours_start">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-label">
+                            <strong>Quiet Hours End</strong>
+                        </div>
+                        <div class="form-control">
+                            <input type="time" id="pref-quiet-end" class="input-field" data-pref="quiet_hours_end">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

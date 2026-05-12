@@ -1,183 +1,311 @@
+// ─────────────────────────────────────────────────────────────────────────────
+//  src/services/api/notification.js
+//  Notification data layer — FleetOps Maintenance App.
+//
+//  All data is fetched from the Laravel backend (/api/v1/notifications/*).
+//  Zero localStorage usage.
+//
+//  Exports named functions (matching what the existing codebase expects) plus
+//  a default object for convenience.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import api from "/shared/api-handler.js";
+
+// ─── Config ───────────────────────────────────────────────────────────────────
+
+const BASE_URL = "http://localhost:8000";
+const PER_PAGE = 30;
+
+api.setBaseURL(BASE_URL);
+
+// ─── In-Memory Cache ──────────────────────────────────────────────────────────
+
 /**
- * FleetOps — Notification API
- * Handles all notification data logic: fetching, marking read,
- * and persisting state to localStorage.
- *
- * All functions are async to mimic real API call patterns.
- *
- * @module api/notification
- */
-
-// ─────────────────────────────────────────────────────────────────
-// CONSTANTS
-// ─────────────────────────────────────────────────────────────────
-
-const STORAGE_KEY = 'fleetops_notifications';
-
-// ─────────────────────────────────────────────────────────────────
-// SEED DATA
-// Fallback data used the first time (no localStorage entry exists).
-// ─────────────────────────────────────────────────────────────────
-
-/**
- * @typedef {'breakdown'|'insurance'|'stock'|'work-order'|'inspection'} NotifType
- *
  * @typedef {Object} Notification
- * @property {string}      id        - Unique identifier
- * @property {NotifType}   type      - Category, drives icon rendering
- * @property {string}      title     - Bold heading shown in the panel
- * @property {string}      body      - Supporting detail text
- * @property {string}      time      - Human-readable relative time string
- * @property {boolean}     read      - Whether the user has seen it
+ * @property {string|number} id
+ * @property {string}        type      - UI type key: 'breakdown'|'warning'|'resolved'
+ * @property {string}        title
+ * @property {string}        body
+ * @property {string}        time      - Relative time string
+ * @property {boolean}       read
+ * @property {string}        eventType - Raw backend event_type
+ * @property {string}        channel   - push|sms|email
+ * @property {string}        status    - pending|sent|delivered|failed
  */
 
 /** @type {Notification[]} */
-const SEED_NOTIFICATIONS = [
-  {
-    id: 'n1',
-    type: 'breakdown',
-    title: 'Breakdown — EGY-5678',
-    body: 'Driver Ahmed Mahmoud reported a breakdown on Ring Road. Transmission failure.',
-    time: '13d ago',
-    read: false,
-  },
-  {
-    id: 'n2',
-    type: 'insurance',
-    title: 'Insurance Expiry — EGY-5678',
-    body: 'Vehicle EGY-5678 insurance expires in 10 days on April 25, 2026.',
-    time: '8d ago',
-    read: false,
-  },
-  {
-    id: 'n3',
-    type: 'stock',
-    title: 'Low Stock — Transmission Fluid',
-    body: 'Transmission Fluid is out of stock. Please reorder immediately.',
-    time: '9d ago',
-    read: false,
-  },
-  {
-    id: 'n4',
-    type: 'work-order',
-    title: 'WO-2039 Resolved',
-    body: 'Karim Hassan resolved Work Order WO-2039 for EGY-1234. Ready for review.',
-    time: '14d ago',
-    read: true,
-  },
-  {
-    id: 'n5',
-    type: 'inspection',
-    title: 'Inspection Expiry — EGY-5678',
-    body: 'Annual inspection for EGY-5678 expired on March 1, 2026. Schedule immediately.',
-    time: '9d ago',
-    read: true,
-  },
-];
+let _cache = [];
 
-// ─────────────────────────────────────────────────────────────────
-// PRIVATE HELPERS
-// ─────────────────────────────────────────────────────────────────
+/** @type {{ total: number, currentPage: number, lastPage: number }} */
+let _pagination = { total: 0, currentPage: 1, lastPage: 1 };
+
+// ─── Mapping Helpers ──────────────────────────────────────────────────────────
 
 /**
- * Loads the current notification list from localStorage.
- * Falls back to seed data if nothing is stored yet.
- *
- * @returns {Notification[]}
+ * Maps a backend event_type to a UI icon type.
+ * @param {string} eventType
+ * @returns {'breakdown'|'warning'|'resolved'|'work-order'|'inspection'|'stock'}
  */
-function _load() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {
-    // Malformed JSON — reset to seed
-  }
-  return SEED_NOTIFICATIONS.map(n => ({ ...n })); // shallow copy
+function _mapType(eventType) {
+    if (!eventType) return "resolved";
+    if (eventType.includes("incident"))    return "breakdown";
+    if (eventType.includes("stock"))       return "stock";
+    if (eventType.includes("inspection"))  return "inspection";
+    if (eventType.includes("work_order") || eventType.includes("shift") || eventType.includes("route")) return "work-order";
+    if (eventType.includes("maintenance") || eventType.includes("delay")) return "warning";
+    return "resolved";
 }
 
 /**
- * Persists the notification list to localStorage.
- *
- * @param {Notification[]} notifications
+ * Maps a backend event_type to a human-readable label.
+ * @param {string} eventType
+ * @returns {string}
  */
-function _save(notifications) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
-  } catch (err) {
-    console.warn('[NotificationAPI] Could not write to localStorage:', err);
-  }
+function _mapLabel(eventType) {
+    const labels = {
+        incident_alert:                "Emergency",
+        low_stock_alert:               "Low Stock",
+        maintenance_alert:             "Maintenance",
+        maintenance_alert_odometer:    "Odometer Alert",
+        maintenance_alert_inspection:  "Inspection Due",
+        proximity_alert:               "Proximity",
+        delay_alert:                   "Delay",
+        status_update:                 "Status Update",
+        status_update_in_transit:      "In Transit",
+        status_update_delivered:       "Delivered",
+        status_update_returned:        "Returned",
+        route_started:                 "Route Started",
+        shift_transfer:                "Shift Transfer",
+    };
+    return labels[eventType] ?? "Notification";
 }
 
-// ─────────────────────────────────────────────────────────────────
-// PUBLIC API
-// ─────────────────────────────────────────────────────────────────
+/**
+ * Converts an ISO timestamp to a relative "time ago" string.
+ * @param {string|null} isoString
+ * @returns {string}
+ */
+function _timeAgo(isoString) {
+    if (!isoString) return "—";
+    const diff = Date.now() - new Date(isoString).getTime();
+    const mins  = Math.floor(diff / 60_000);
+    const hours = Math.floor(diff / 3_600_000);
+    const days  = Math.floor(diff / 86_400_000);
+    if (mins  < 1)  return "Just now";
+    if (mins  < 60) return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+}
 
 /**
- * Returns all notifications, most-recent first.
+ * Normalises a raw backend record into the UI shape.
+ * @param {Object} raw
+ * @returns {Notification}
+ */
+function _normalise(raw) {
+    const payload = raw.payload || {};
+    return {
+        id:        raw.notification_id ?? raw.id,
+        type:      _mapType(raw.event_type),
+        label:     _mapLabel(raw.event_type),
+        title:     payload.title ?? raw.title ?? _mapLabel(raw.event_type),
+        body:      payload.body ?? payload.description ?? raw.message ?? "",
+        time:      _timeAgo(raw.created_at),
+        read:      raw.status === "delivered" || raw.read_at !== null,
+        eventType: raw.event_type ?? "",
+        channel:   raw.channel   ?? "",
+        status:    raw.status    ?? "pending",
+    };
+}
+
+// ─── Public Async API ─────────────────────────────────────────────────────────
+
+/**
+ * Fetches the latest notifications from the backend and updates the in-memory
+ * cache. Returns the normalised list.
  *
  * @async
+ * @param {number} [perPage]
  * @returns {Promise<Notification[]>}
  */
-export async function fetchNotifications() {
-  // Simulate network latency
-  await new Promise(r => setTimeout(r, 60));
-  return _load();
+export async function fetchNotifications(perPage = PER_PAGE) {
+    try {
+        const response = await api.get("/api/v1/notifications", {
+            params: { per_page: perPage },
+        });
+
+        if (response.ok && response.data?.success) {
+            const payload = response.data.data;
+            const raw = Array.isArray(payload) ? payload : (payload?.data ?? []);
+            _cache = raw.map(_normalise);
+
+            if (payload?.total !== undefined) {
+                _pagination = {
+                    total:       payload.total,
+                    currentPage: payload.current_page,
+                    lastPage:    payload.last_page,
+                };
+            }
+        } else {
+            console.warn("[NotificationApi] fetchNotifications: non-success response", response.data);
+        }
+    } catch (err) {
+        console.error("[NotificationApi] fetchNotifications failed:", err.message ?? err);
+    }
+
+    return [..._cache];
 }
 
 /**
- * Returns the count of unread notifications.
+ * Fetches a single notification by ID.
+ *
+ * @async
+ * @param {string|number} id
+ * @returns {Promise<Notification|null>}
+ */
+export async function fetchNotificationById(id) {
+    try {
+        const response = await api.get(`/api/v1/notifications/${id}`);
+        if (response.ok && response.data?.success) {
+            const item = _normalise(response.data.data);
+            const idx  = _cache.findIndex((n) => n.id == id);
+            if (idx !== -1) _cache[idx] = item;
+            else _cache.unshift(item);
+            return item;
+        }
+    } catch (err) {
+        console.error(`[NotificationApi] fetchNotificationById(${id}) failed:`, err.message ?? err);
+    }
+    return null;
+}
+
+/**
+ * Returns the count of unread notifications from the cache.
  *
  * @async
  * @returns {Promise<number>}
  */
 export async function fetchUnreadCount() {
-  await new Promise(r => setTimeout(r, 30));
-  return _load().filter(n => !n.read).length;
+    // Cache must be populated by fetchNotifications() first.
+    // Re-fetch only if cache is empty.
+    if (_cache.length === 0) {
+        await fetchNotifications();
+    }
+    return _cache.filter((n) => !n.read).length;
 }
 
 /**
- * Marks a single notification as read by its ID.
- *
- * @async
- * @param {string} id
- * @returns {Promise<{success: boolean}>}
- */
-export async function markAsRead(id) {
-  await new Promise(r => setTimeout(r, 40));
-  const list = _load();
-  const target = list.find(n => n.id === id);
-  if (target) {
-    target.read = true;
-    _save(list);
-  }
-  return { success: !!target };
-}
-
-/**
- * Marks ALL notifications as read.
+ * Optimistically marks all cached notifications as read.
+ * (The backend has no bulk-read endpoint; this is a local UI update.)
  *
  * @async
  * @returns {Promise<{success: boolean, updated: number}>}
  */
 export async function markAllAsRead() {
-  await new Promise(r => setTimeout(r, 50));
-  const list = _load();
-  let updated = 0;
-  list.forEach(n => {
-    if (!n.read) { n.read = true; updated++; }
-  });
-  _save(list);
-  return { success: true, updated };
+    let updated = 0;
+    _cache = _cache.map((n) => {
+        if (!n.read) { updated++; return { ...n, read: true }; }
+        return n;
+    });
+    
+    return { success: true, updated };
 }
 
 /**
- * Clears all stored notifications, resetting to seed data.
- * Useful for dev/testing.
+ * Optimistically marks a single notification as read.
  *
  * @async
- * @returns {Promise<void>}
+ * @param {string|number} id
+ * @returns {Promise<{success: boolean}>}
  */
-export async function resetNotifications() {
-  await new Promise(r => setTimeout(r, 30));
-  localStorage.removeItem(STORAGE_KEY);
+export async function markAsRead(id) {
+    const idx = _cache.findIndex((n) => n.id == id);
+    if (idx !== -1) {
+        _cache[idx] = { ..._cache[idx], read: true };
+        return { success: true };
+    }
+    return { success: false };
 }
+
+/**
+ * Fetches the user's notification preferences.
+ *
+ * @async
+ * @returns {Promise<Object|null>}
+ */
+export async function fetchPreferences() {
+    try {
+        const response = await api.get("/api/v1/notifications/preferences");
+        if (response.ok && response.data?.success) {
+            return response.data.data;
+        }
+    } catch (err) {
+        console.error("[NotificationApi] fetchPreferences failed:", err.message ?? err);
+    }
+    return null;
+}
+
+/**
+ * Updates the user's notification preferences.
+ *
+ * @async
+ * @param {Object} prefs - { push_enabled, sms_enabled, email_enabled,
+ *                           quiet_hours_start, quiet_hours_end,
+ *                           preferred_language }
+ * @returns {Promise<{success: boolean, data?: Object}>}
+ */
+export async function updatePreferences(prefs) {
+    try {
+        const response = await api.put("/api/v1/notifications/preferences", prefs);
+        if (response.ok && response.data?.success) {
+            return { success: true, data: response.data.data };
+        }
+        return { success: false };
+    } catch (err) {
+        console.error("[NotificationApi] updatePreferences failed:", err.message ?? err);
+        return { success: false };
+    }
+}
+
+/**
+ * Registers an FCM token for push notifications.
+ *
+ * @async
+ * @param {string} fcmToken
+ * @returns {Promise<{success: boolean}>}
+ */
+export async function updateFcmToken(fcmToken) {
+    try {
+        const response = await api.post("/api/v1/notifications/fcm-token", {
+            fcm_token: fcmToken,
+        });
+        return { success: response.ok };
+    } catch (err) {
+        console.error("[NotificationApi] updateFcmToken failed:", err.message ?? err);
+        return { success: false };
+    }
+}
+
+/**
+ * Returns the current pagination metadata.
+ * @returns {{ total: number, currentPage: number, lastPage: number }}
+ */
+export function getPagination() {
+    return { ..._pagination };
+}
+
+// ─── Default Export ───────────────────────────────────────────────────────────
+
+const NotificationApi = {
+    fetchNotifications,
+    fetchNotificationById,
+    fetchUnreadCount,
+    markAsRead,
+    markAllAsRead,
+    fetchPreferences,
+    updatePreferences,
+    updateFcmToken,
+    getPagination,
+};
+
+export default NotificationApi;

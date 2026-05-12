@@ -532,3 +532,27 @@ export async function showNotificationPanel() {
     }
   }
 }
+
+/**
+ * Global initialization for the notification panel.
+ * Attaches the global click listener to the bell button and seeds the initial unread count.
+ */
+export function initNotificationPanel() {
+  // Wire up the bell button globally
+  document.addEventListener('click', (e) => {
+    const bellButton = e.target.closest('.notif-bell-btn, button:has(.notif-badge), button:has([class*="badge"])');
+    if (bellButton) {
+      e.preventDefault();
+      showNotificationPanel();
+    }
+  });
+
+  // Fetch initial data to seed the badge
+  fetchNotifications().then(notifications => {
+    const unreadCount = notifications.filter(n => !n.read).length;
+    const bellBadge = document.getElementById(BADGE_BTN_ID);
+    if (bellBadge) bellBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+  }).catch(err => {
+    console.error('[NotificationUI] Failed to seed initial badge:', err);
+  });
+}

@@ -1,9 +1,11 @@
 import { getSettings, updateSettings } from '/src/services/api/settings.js';
 import { logAuditAction } from '../../services/api/auditLogger.js';
 import { createIcons, icons } from '/node_modules/lucide/dist/esm/lucide.mjs';
+import NotificationApi from '../../services/api/notification.js';
 
 let root = null;
 let settingsState = null;
+let notificationPrefs = null;
 
 /**
  * Syncs the current settingsState object to the DOM inputs and elements
@@ -71,16 +73,23 @@ function renderState() {
         }
     });
 
-    // --- NOTIFICATIONS TAB ---
-    const checkboxes = root.querySelectorAll('.check-box');
-    checkboxes.forEach(cb => {
-        const groupParts = cb.dataset.group.split('.'); // ["notifications", "deliveryWindowViolation"]
-        const type = groupParts[1];
-        const key = cb.dataset.key; // "push", "sms", "email"
-        if (settingsState.notifications[type]) {
-            cb.checked = settingsState.notifications[type][key];
-        }
-    });
+    // --- NOTIFICATIONS TAB (Real API) ---
+    if (notificationPrefs) {
+        const pPush = root.querySelector('#pref-push');
+        if (pPush) pPush.checked = notificationPrefs.push_enabled;
+
+        const pEmail = root.querySelector('#pref-email');
+        if (pEmail) pEmail.checked = notificationPrefs.email_enabled;
+
+        const pSms = root.querySelector('#pref-sms');
+        if (pSms) pSms.checked = notificationPrefs.sms_enabled;
+
+        const pStart = root.querySelector('#pref-quiet-start');
+        if (pStart) pStart.value = notificationPrefs.quiet_hours_start?.substring(0, 5) || "";
+
+        const pEnd = root.querySelector('#pref-quiet-end');
+        if (pEnd) pEnd.value = notificationPrefs.quiet_hours_end?.substring(0, 5) || "";
+    }
 
     // --- SYSTEM MAINTENANCE TAB (Database) ---
     const lastRunEl = root.querySelector('#db-last-run');
@@ -139,11 +148,13 @@ function handleInputAndChange(e) {
     const target = e.target;
 
     // Handle Checkboxes
-    if (target.classList.contains('check-box')) {
-        const parts = target.dataset.group.split('.'); // ["notifications", "event"]
-        const key = target.dataset.key;
-        if (parts[0] === 'notifications') {
-            settingsState.notifications[parts[1]][key] = target.checked;
+    // Handle Real Notification Preferences
+    if (target.dataset.pref && notificationPrefs) {
+        if (target.type === 'checkbox') {
+            notificationPrefs[target.dataset.pref] = target.checked;
+        } else {
+            // It's a time input
+            notificationPrefs[target.dataset.pref] = target.value ? `${target.value}:00` : null;
         }
         return;
     }
@@ -229,9 +240,15 @@ function handleClick(e) {
         createIcons({ icons });
         saveBtn.disabled = true;
 
-        // Execute real API storage update
-        updateSettings(settingsState).then((res) => {
-            console.log('--- SETTINGS SAVED SUCCESSFULLY TO LOCAL STORAGE API ---', res);
+        // Execute real API storage update (Parallel calls for general settings and notification prefs)
+        const promises = [updateSettings(settingsState)];
+        
+        if (notificationPrefs) {
+            promises.push(NotificationApi.updatePreferences(notificationPrefs));
+        }
+
+        Promise.all(promises).then((results) => {
+            console.log('--- SETTINGS SAVED SUCCESSFULLY ---', results);
 
             // Log to Audit Trail
             logAuditAction("ADM-001", "Admin", "Updated", "SystemConfig", "Settings", null, settingsState);
@@ -301,8 +318,17 @@ function runArchiveSimulation(btn) {
 export async function mount(rootElement) {
     root = rootElement;
 
-    // Fetch state from mock API
-    settingsState = await getSettings();
+    // Fetch state from APIs
+    const [settings, prefs] = await Promise.all([
+        getSettings(),
+        NotificationApi.getPreferences()
+    ]);
+    
+    settingsState = settings;
+    notificationPrefs = prefs || { 
+        push_enabled: false, sms_enabled: false, email_enabled: false, 
+        quiet_hours_start: null, quiet_hours_end: null 
+    };
 
     // Inject data into UI
     renderState();

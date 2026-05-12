@@ -186,7 +186,7 @@
                         <span class="sidebar-link__label">Notifications</span>
                         <span class="sidebar-link__badge">4</span>
                     </a>
-                    <a
+                    <!-- <a
                         class="sidebar-link"
                         href="/preview-page"
                         data-link
@@ -197,7 +197,7 @@
                             ><i data-lucide="eye"></i
                         ></span>
                         <span class="sidebar-link__label">Preview Page</span>
-                    </a>
+                    </a> -->
                 </nav>
 
                 <div class="sidebar-footer">
@@ -221,32 +221,20 @@
                         <div class="topbar-title">
                             <h1 id="nav-title">Maintenance</h1>
                         </div>
-                        <div class="search-field topbar-search">
+                        <!-- <div class="search-field topbar-search">
                             <i data-lucide="search" class="search-icon"></i>
 
                             <input
                                 type="text"
                                 placeholder="Search work orders, vehicles, parts..." />
-                        </div>
+                        </div> -->
                     </div>
 
                     <div class="dashboard-topbar__right">
                         <button
                             class="topbar-icon-btn topbar-notification-btn"
                             type="button"
-                            aria-label="Notifications"
-                            onclick="
-                                import('./src/utils/notification-ui.js')
-                                    .then((module) =>
-                                        module.showNotificationPanel(),
-                                    )
-                                    .catch((err) =>
-                                        console.error(
-                                            'Error loading panel:',
-                                            err,
-                                        ),
-                                    )
-                            ">
+                            aria-label="Notifications">
                             <i data-lucide="bell"></i>
                             <span
                                 class="topbar-notification-badge"

@@ -405,9 +405,9 @@ async function getDashboardData() {
     vehiclesAttentionData: shapeVehiclesAttention(
       summary?.VEHICLES_ATTENTION_DATA,
     ),
-    upcomingMaintenanceData: shapeUpcomingMaintenance(
-      summary?.UPCOMING_MAINTENANCE_DATA,
-    ),
+    // upcomingMaintenanceData: shapeUpcomingMaintenance(
+    //   summary?.UPCOMING_MAINTENANCE_DATA,
+    // ),
   };
 }
 
