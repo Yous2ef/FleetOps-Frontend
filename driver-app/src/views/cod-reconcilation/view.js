@@ -26,81 +26,94 @@ export async function mount(rootElement) {
     const dateEl = routeSpans[0];
     const routeIdEl = routeSpans[1];
 
-    // Fetch and map data
-    try {
-        const routeId = localStorage.getItem('activeRouteId') || new URLSearchParams(window.location.search).get('routeId') || '1';
-        
-        if (dateEl) dateEl.innerText = new Date().toLocaleDateString();
-        if (routeIdEl) routeIdEl.innerText = routeId;
+    // ── Task 2: Populate Reconciliation Data (Mock Data) ───────────────────
+    const reconciliationMockData = {
+        summary: {
+            total_expected: 1250.0,
+            expected_delivery_count: 4,
+            total_collected: 1200.0,
+            validated_count: 3,
+            discrepancy: -50.0,
+        },
+        orders: [
+            {
+                order_id: "1005",
+                customer_name: "Ahmed Mohamed",
+                status: "Expected",
+                expected_amount: 450.0,
+            },
+            {
+                order_id: "1008",
+                customer_name: "Delta Logistics",
+                status: "Disputed",
+                expected_amount: 500.0,
+            },
+            {
+                order_id: "1010",
+                customer_name: "John Doe",
+                status: "Collected",
+                expected_amount: 300.0,
+            },
+        ],
+    };
 
-        const data = await CodStorage.getReconciliationSummary(routeId);
-        
-        if (data && data.summary) {
-            if (totalExpectedAmount) totalExpectedAmount.innerText = `$${parseFloat(data.summary.total_expected || 0).toFixed(2)}`;
-            if (totalExpectedCount) totalExpectedCount.innerText = `${data.summary.expected_delivery_count || 0} deliveries`;
-            
-            if (totalCollectedAmount) totalCollectedAmount.innerText = `$${parseFloat(data.summary.total_collected || 0).toFixed(2)}`;
-            if (totalCollectedCount) totalCollectedCount.innerText = `${data.summary.validated_count || 0} validated deliveries`;
-            
-            const discrepancy = parseFloat(data.summary.discrepancy || 0);
-            if (discrepancy !== 0) {
-                if (discrepancyCard) {
-                    discrepancyCard.style.display = 'flex';
-                    if (discrepancyAmount) discrepancyAmount.innerText = `-$${Math.abs(discrepancy).toFixed(2)}`;
-                }
-                if (alertCard) alertCard.style.display = 'flex';
-            } else {
-                if (discrepancyCard) discrepancyCard.style.display = 'none';
-                if (alertCard) alertCard.style.display = 'none';
+    // Mapping logic
+    const routeId = localStorage.getItem("activeRouteId") || "R-8821";
+    if (dateEl) dateEl.innerText = new Date().toLocaleDateString();
+    if (routeIdEl) routeIdEl.innerText = routeId;
+
+    const data = reconciliationMockData;
+
+    if (data && data.summary) {
+        if (totalExpectedAmount)
+            totalExpectedAmount.innerText = `${parseFloat(data.summary.total_expected || 0).toLocaleString()} EGP`;
+        if (totalExpectedCount)
+            totalExpectedCount.innerText = `${data.summary.expected_delivery_count || 0} deliveries`;
+
+        if (totalCollectedAmount)
+            totalCollectedAmount.innerText = `${parseFloat(data.summary.total_collected || 0).toLocaleString()} EGP`;
+        if (totalCollectedCount)
+            totalCollectedCount.innerText = `${data.summary.validated_count || 0} validated deliveries`;
+
+        const discrepancy = parseFloat(data.summary.discrepancy || 0);
+        if (discrepancy !== 0) {
+            if (discrepancyCard) {
+                discrepancyCard.style.display = "flex";
+                if (discrepancyAmount)
+                    discrepancyAmount.innerText = `-${Math.abs(discrepancy).toFixed(2)} EGP`;
             }
-        }
-        
-        if (data && data.orders && data.orders.length > 0) {
-            if (tableBody) {
-                tableBody.innerHTML = "";
-                data.orders.forEach((order, index) => {
-                    const isLast = index === data.orders.length - 1;
-                    const row = document.createElement("div");
-                    row.className = `row table-row ${isLast ? 'table-row--last' : ''}`;
-                    row.innerHTML = `
-                        <span class="helper-text col-id order-id">${order.order_id || 'ORD-N/A'}</span>
-                        <span class="helper-text col-name">${order.customer_name || 'Customer'}</span>
-                        <span class="helper-text col-amt text-right">$${parseFloat(order.expected_amount || 0).toFixed(2)}</span>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            }
+            if (alertCard) alertCard.style.display = "flex";
         } else {
-            // Empty state
-            if (tableBody) {
-                tableBody.innerHTML = `<p class="helper-text text-center mt-4 mb-4" style="width: 100%;">no orders</p>`;
-            }
-            if (totalExpectedAmount) totalExpectedAmount.innerText = `$0.00`;
-            if (totalExpectedCount) totalExpectedCount.innerText = `0 deliveries`;
-            if (totalCollectedAmount) totalCollectedAmount.innerText = `$0.00`;
-            if (totalCollectedCount) totalCollectedCount.innerText = `0 validated deliveries`;
-            
-            if (discrepancyCard) discrepancyCard.style.display = 'none';
-            if (alertCard) alertCard.style.display = 'none';
+            if (discrepancyCard) discrepancyCard.style.display = "none";
+            if (alertCard) alertCard.style.display = "none";
         }
-    } catch (error) {
-        console.error("Failed to load reconciliation data:", error);
-        if (tableBody) {
-            tableBody.innerHTML = `<p class="helper-text text-danger text-center mt-4 mb-4" style="width: 100%;">Failed to load reconciliation data: ${error.message || "Network Error"}</p>`;
-        }
-        if (totalExpectedAmount) totalExpectedAmount.innerText = `$0.00`;
-        if (totalExpectedCount) totalExpectedCount.innerText = `0 deliveries`;
-        if (totalCollectedAmount) totalCollectedAmount.innerText = `$0.00`;
-        if (totalCollectedCount) totalCollectedCount.innerText = `0 validated deliveries`;
-        
-        if (discrepancyCard) discrepancyCard.style.display = 'none';
-        if (alertCard) alertCard.style.display = 'none';
     }
 
+    if (data && data.orders && data.orders.length > 0) {
+        if (tableBody) {
+            tableBody.innerHTML = "";
+            data.orders.forEach((order, index) => {
+                const isLast = index === data.orders.length - 1;
+                const row = document.createElement("div");
+                row.className = `row table-row ${isLast ? "table-row--last" : ""}`;
+                row.innerHTML = `
+                        <span class="helper-text col-id order-id">ORD-${order.order_id}</span>
+                        <span class="helper-text col-name">${order.customer_name}</span>
+                        <span class="helper-text col-amt text-right">${parseFloat(order.expected_amount).toFixed(2)} EGP</span>
+                    `;
+                tableBody.appendChild(row);
+            });
+        }
+    }
+
+    // ── Task 3: Submit Button Action ────────────────────────────────────────
     if (submitBtn) {
-        submitBtn.addEventListener("click", () => {
+        submitBtn.onclick = () => {
             alert("Reconciliation submitted successfully!");
-        });
+            // Navigate back to stats page
+            window.history.pushState({}, "", "/stats-page");
+            window.dispatchEvent(new Event("popstate"));
+        };
     }
 
     // Add Note Logic

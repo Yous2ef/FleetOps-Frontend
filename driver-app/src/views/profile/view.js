@@ -79,59 +79,94 @@ export async function mount(rootElement) {
   if (modelValue) modelValue.textContent = "…";
 
   // ── Step B: Fetch Data in Parallel ──────────────────────────────────────────
-  const [driverResult, vehicleResult] = await Promise.allSettled([
-    DriverStorage.getDriverProfile(driverId),
-    VehicleStorage.getVehicleById(vehicleId),
-  ]);
+  try {
+    const [allDrivers, allVehicles, userProfile] = await Promise.all([
+      DriverStorage.getAllFleetDrivers(),
+      VehicleStorage.getAllVehicles(),
+      DriverStorage.getDriverProfile(driverId),
+    ]);
 
-  // ── Step C: Render Driver Data ──────────────────────────────────────────────
-  if (driverResult.status === "fulfilled") {
-    const user = driverResult.value;
+    // ── Step C: Match the Data ────────────────────────────────────────────────
+    // 1. Find the fleet driver record
+    const matchedDriver = allDrivers.find(
+      (d) => String(d.driver_id) === String(driverId)
+    );
 
-    if (profileContainer) {
-      const initials = getInitials(user.name);
-      const isActive = user.is_active;
-      const statusLabel = isActive ? "Active" : "Inactive";
-      const statusChipClass = isActive ? "success" : "neutral";
+    // 2. Find the assigned vehicle
+    const assignedVehicleId = matchedDriver?.current_vehicle;
+    const vehicle = allVehicles.find(
+      (v) => String(v.vehicle_id) === String(assignedVehicleId)
+    );
 
-      profileContainer.innerHTML = `
-        <div class="profile-avatar-wrapper">
-            <div class="profile-avatar profile-initials">${initials}</div>
-            <span class="profile-avatar-badge">A</span>
-        </div>
-        <div class="stack profile-meta-text">
-            <h1 class="heading-xl profile-name">${user.name}</h1>
-            <div class="row profile-meta-chips">
-                <span class="chip neutral profile-id">ID: ${user.user_id}</span>
-                <span class="chip ${statusChipClass} profile-status">${statusLabel}</span>
-            </div>
-        </div>`;
+    // ── Step D: Render Driver Data ────────────────────────────────────────────
+    if (matchedDriver) {
+      if (profileContainer) {
+        const initials = getInitials(matchedDriver.name);
+        const status = matchedDriver.status || "Unknown";
+        const license = matchedDriver.license_no || "N/A";
+        
+        // Use status to determine chip color
+        const statusLower = status.toLowerCase();
+        let statusChipClass = "neutral";
+        if (statusLower.includes("onshift") || statusLower.includes("available")) {
+          statusChipClass = "success";
+        } else if (statusLower.includes("break") || statusLower.includes("off")) {
+          statusChipClass = "warning";
+        }
+
+        profileContainer.innerHTML = `
+          <div class="profile-avatar-wrapper">
+              <div class="profile-avatar profile-initials">${initials}</div>
+              <span class="profile-avatar-badge">A</span>
+          </div>
+          <div class="stack profile-meta-text">
+              <h1 class="heading-xl profile-name">${matchedDriver.name}</h1>
+              <div class="row profile-meta-chips">
+                  <span class="chip neutral profile-id">LIC: ${license}</span>
+                  <span class="chip ${statusChipClass} profile-status">${status}</span>
+              </div>
+          </div>`;
+      }
+    } else {
+      console.warn(`Driver with id=${driverId} not found in fleet list.`);
+      if (profileContainer) {
+        profileContainer.innerHTML = `
+          <p class="helper-text" style="text-align:center;padding:1rem;">
+            Driver profile not found in system records.
+          </p>`;
+      }
     }
 
-    if (phoneValue) phoneValue.textContent = user.phone_no || "—";
-    if (emailValue) emailValue.textContent = user.email || "—";
-  } else {
-    console.error("Error fetching driver profile:", driverResult.reason);
+    // ── Step E: Render Contact Data (from User Profile object) ────────────────
+    if (userProfile) {
+      if (phoneValue) phoneValue.textContent = userProfile.phone_no || "Not provided";
+      if (emailValue) emailValue.textContent = userProfile.email || "Not provided";
+    } else {
+      if (phoneValue) phoneValue.textContent = "Not available";
+      if (emailValue) emailValue.textContent = "Not available";
+    }
+
+    // ── Step F: Render Vehicle Data ───────────────────────────────────────────
+    if (vehicle) {
+      if (plateValue) plateValue.textContent = vehicle.plate_number || "—";
+      if (modelValue) modelValue.textContent = vehicle.model || "—";
+    } else {
+      if (plateValue) plateValue.textContent = "Not assigned";
+      if (modelValue) modelValue.textContent = "Not assigned";
+    }
+
+  } catch (error) {
+    console.error("Error fetching profile data:", error);
     if (profileContainer) {
       profileContainer.innerHTML = `
         <p class="helper-text" style="text-align:center;padding:1rem;color:var(--color-error, #e53935);">
-          Could not load profile. Please try again later.
+          Could not load profile. Please check your connection.
         </p>`;
     }
-    if (phoneValue) phoneValue.textContent = "—";
-    if (emailValue) emailValue.textContent = "—";
-  }
-
-  // ── Step D: Render Vehicle Data ─────────────────────────────────────────────
-  if (vehicleResult.status === "fulfilled") {
-    const vehicle = vehicleResult.value;
-
-    if (plateValue) plateValue.textContent = vehicle.VehicleLicense || "—";
-    if (modelValue) modelValue.textContent = vehicle.VehicleModel || "—";
-  } else {
-    console.error("Error fetching vehicle data:", vehicleResult.reason);
-    if (plateValue) plateValue.textContent = "Unavailable";
-    if (modelValue) modelValue.textContent = "Unavailable";
+    if (phoneValue) phoneValue.textContent = "N/A";
+    if (emailValue) emailValue.textContent = "N/A";
+    if (plateValue) plateValue.textContent = "N/A";
+    if (modelValue) modelValue.textContent = "N/A";
   }
 
   // ── Logout Handler ──────────────────────────────────────────────────────────

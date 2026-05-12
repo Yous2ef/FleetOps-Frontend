@@ -7,20 +7,24 @@ api.setBaseURL("http://localhost:8000");
 // ─── API Methods ─────────────────────────────────────────────────────────────
 
 /**
- * Fetches a vehicle by its ID from the backend.
+ * Fetches the full list of fleet vehicles from the dispatch API.
  *
- * @param {string|number} vehicle_id - The vehicle ID.
- * @returns {Promise<Object>} The vehicle data object.
+ * Response shape per item:
+ *   { vehicle_id, model, type, plate_number, status }
+ *
+ * @returns {Promise<Array>} Array of vehicle objects.
  */
-async function getVehicleById(vehicle_id) {
-  const response = await api.get(`/api/v1/dispatch/vehicles/${vehicle_id}`);
-  return response.data.data;
+async function getAllVehicles() {
+  const response = await api.get("/api/v1/dispatch/vehicles/");
+  // The backend returns { success: true, data: [...] }
+  // We need to return the inner array.
+  return Array.isArray(response.data?.data) ? response.data.data : [];
 }
 
 // ────────────────────────────────────────────────────────────────
 
 const VehiclesStorage = {
-  getVehicleById,
+  getAllVehicles,
 };
 
 export default VehiclesStorage;

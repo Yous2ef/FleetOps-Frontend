@@ -18,6 +18,18 @@ async function getDriverRoutes(driver_id) {
 }
 
 /**
+ * Starts/Accepts a route on the backend.
+ * Uses POST /api/v1/dispatch/routes/{routeId}/start
+ *
+ * @param {string|number} routeId - The route ID.
+ * @returns {Promise<Object>} The API response envelope.
+ */
+async function startRoute(routeId) {
+  const response = await api.post(`/api/v1/dispatch/routes/${routeId}/start`);
+  return response.data;
+}
+
+/**
  * Notifies the backend that the driver has arrived at a stop.
  * Uses PATCH /api/v1/dispatch/stops/{stopId}/status
  *
@@ -68,6 +80,7 @@ function markStopDelivered(route_id, stop_id, deliveryProof = null) {
 
 const RoutesStorage = {
   getDriverRoutes,
+  startRoute,
   markArrived,
   getRouteDetails,
   getStopDetails,

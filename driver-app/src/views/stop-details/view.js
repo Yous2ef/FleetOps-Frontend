@@ -1,154 +1,252 @@
-import OrdersAPI from "../../services/api/orders.js";
+import RouteStopsAPI from "../../services/api/route-stops.js";
 
 /**
  * Stop Details View Module
- * Senior Frontend Implementation
  *
- * Fetches and filters route orders to find the matching stop details.
+ * Dynamically populates stop and order information using the RouteStopsAPI.
+ * Features: Loading states, optional chaining for safety, and reactive UI mapping.
  */
 export async function mount(rootElement) {
   if (!rootElement) return;
 
-  // 1. State Retrieval: Support URL params, snake_case (app default) and camelCase (prompt requirement)
+  // 1. State Retrieval: Extract stopId from URL query params
   const urlParams = new URLSearchParams(window.location.search);
-  const routeId =
-    urlParams.get("routeId") ||
-    localStorage.getItem("route_id") ||
-    localStorage.getItem("routeId") ||
-    "4";
-  const currentStopId =
-    urlParams.get("stopId") ||
-    localStorage.getItem("current_stop_id") ||
-    localStorage.getItem("currentStopId") ||
-    "20005";
+  const stopId =
+    urlParams.get("stopId") || localStorage.getItem("current_stop_id");
+
+  if (!stopId) {
+    console.error("No Stop ID provided in URL or storage.");
+    renderError(
+      rootElement,
+      "Missing Stop ID. Please return to the route page.",
+    );
+    return;
+  }
+
+  // 2. Loading State Initialization
+  const container = rootElement.querySelector(".stop-details-container");
+  const originalContent = container ? container.innerHTML : "";
+
+  if (container) {
+    container.innerHTML = `
+      <div class="stack items-center justify-center p-48 text-center" style="min-height: 60vh;">
+        <div class="spinner mb-16"></div>
+        <p class="helper-text">Loading stop details...</p>
+      </div>`;
+  }
 
   try {
-    // 2. Data Extraction: Fetch route orders using the service
-    const response = await OrdersAPI.getRouteOrders(routeId);
+    // 3. Data Fetching
+    const stopData = await RouteStopsAPI.getStopDetails(stopId);
 
-    // Ensure we access the array correctly (response.data.data per JSON structure)
-    const orders = response?.data?.data || [];
-
-    // 3. Filtering: Find the exact order matching the current stop
-    const order = orders.find((o) =>
-      o?.route_stops?.some(
-        (rs) => String(rs.stop_id) === String(currentStopId),
-      ),
-    );
-
-    if (!order) {
-      console.error(
-        `ERROR: Order for stop ID ${currentStopId} not found in route ${routeId}`,
-      );
-      return;
+    if (!stopData) {
+      throw new Error("No data returned for this stop.");
     }
 
-    // Find the specific route_stop object to get the stop_no
-    const matchingStop = order?.route_stops?.find(
-      (rs) => String(rs.stop_id) === String(currentStopId),
-    );
+    // Restore UI structure
+    if (container) container.innerHTML = originalContent;
 
-    // 4. DOM Mapping (CASE-SENSITIVE) with safety checks and optional chaining
-    const safeSetText = (selector, text) => {
+    // 4. UI Data Binding (with Optional Chaining)
+    const safeSetText = (selector, text, fallback = "N/A") => {
       const el = rootElement.querySelector(selector);
-      if (el) el.textContent = text || "N/A";
+      if (el) el.textContent = text || fallback;
     };
 
-    // Stop Number: Render "STOP #{stop_no}"
+    /**
+     * Helper to format single time strings or ISO dates to HH:MM.
+     * Robust enough to handle existing "HH:MM" strings.
+     */
+    const formatTime = (timeStr) => {
+      if (!timeStr) return "";
+      if (/^\d{1,2}:\d{2}$/.test(timeStr)) return timeStr;
+
+      try {
+        const date = new Date(timeStr);
+        if (isNaN(date.getTime())) return timeStr;
+        return date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+      } catch (e) {
+        return timeStr;
+      }
+    };
+
+    /**
+     * Parses PromisedWindow (could be "Start - End" or ISO range)
+     * and returns formatted "HH:MM —<br>HH:MM"
+     */
+    const formatWindow = (windowStr) => {
+      if (!windowStr || windowStr === "TBD") return "TBD";
+
+      // Split by common range separators
+      const separators = [" — ", " —", "— ", "—", " - ", " -", "- ", "-"];
+      let parts = [windowStr];
+
+      for (const sep of separators) {
+        if (windowStr.includes(sep)) {
+          parts = windowStr.split(sep);
+          break;
+        }
+      }
+
+      if (parts.length === 2) {
+        const start = formatTime(parts[0].trim());
+        const end = formatTime(parts[1].trim());
+        return `${start} —<br>${end}`;
+      }
+
+      return formatTime(windowStr);
+    };
+
+    // Header Stop Number
     safeSetText(
       ".data-stop-number",
-      matchingStop?.stop_no ? `STOP #${matchingStop.stop_no}` : "STOP #N/A",
+      stopData.stop_no ? `STOP #${stopData.stop_no}` : "STOP #—",
     );
 
-    // Name: order?.customer?.user?.name || 'N/A'
-    safeSetText(".data-customer-name", order?.customer?.user?.name || "N/A");
+    // Customer Name (Deeply Nested)
+    safeSetText(
+      ".data-customer-name",
+      stopData.order?.customer?.user?.name || stopData.order?.Customer?.name,
+      "Unknown Customer",
+    );
 
-    // Address: order?.Area || 'N/A'
-    safeSetText(".data-address", order?.Area || "N/A");
+    // Address Mapping (Deeply Nested)
+    const address =
+      stopData.order?.customer?.address ||
+      stopData.order?.delivery_address ||
+      stopData.order?.Customer?.address ||
+      "Address not specified";
+    safeSetText(".data-address", address);
 
-    // Helper to format time strings (e.g., "3.00" -> "3:00")
-    const formatTime = (timeStr) => {
-      if (!timeStr || typeof timeStr !== "string") return timeStr;
-      return timeStr.replace(".", ":");
-    };
-
-    // Time: Map ETA and format .data-time-window
-    const rawEta = order?.ETA || "N/A";
-    const formattedEta = formatTime(rawEta);
-
-    safeSetText(".data-eta", order?.ETA ? `ETA: ${formattedEta}` : "N/A");
-
+    // Time Window (Strictly inside the card)
     const windowEl = rootElement.querySelector(".data-time-window");
     if (windowEl) {
-      const rawWindow = order?.DeliveryTimeWindow || "TBD";
-      const formattedWindow = formatTime(rawWindow);
-      windowEl.innerHTML = `${formattedEta} —<br>${formattedWindow}`;
+      const windowStr = stopData.order?.PromisedWindow || "TBD";
+      windowEl.innerHTML = formatWindow(windowStr);
     }
 
-    // Price: order?.Price
-    safeSetText(
-      ".data-payment-amount",
-      order?.Price ? `EGP ${order.Price}` : "N/A",
-    );
+    // ETA Formatting
+    const etaText = formatTime(stopData.eta);
+    safeSetText(".data-eta", stopData.eta ? `ETA: ${etaText}` : "ETA: TBD");
 
-    // Phone: order?.customer?.phone_no (with fallback for common alternative paths)
-    safeSetText(
-      ".data-phone-number",
-      order?.customer?.phone_no || order?.customer?.user?.phone_no || "N/A",
-    );
+    // Payment Logic
+    const amount =
+      stopData.order?.TotalAmount ||
+      stopData.order?.amount ||
+      stopData.order?.Price ||
+      "0.00";
+    safeSetText(".data-payment-amount", `EGP ${amount}`);
 
-    // Instructions: order?.SpecialInstructions
-    safeSetText(
-      ".data-special-instructions",
-      order?.SpecialInstructions || "N/A",
-    );
-
-    // 5. COD Logic Bug-Fix
     const paymentStatusEl = rootElement.querySelector(".data-payment-status");
     if (paymentStatusEl) {
-      const paymentMethod = order?.Payment_method?.toUpperCase() || "";
-      if (paymentMethod.includes("COD")) {
+      const method = (
+        stopData.order?.Payment_method ||
+        stopData.order?.payment_method ||
+        ""
+      ).toUpperCase();
+      if (method.includes("COD")) {
         paymentStatusEl.textContent = "COD REQUIRED";
-        // Apply red/danger CSS class
         paymentStatusEl.className = "label text-danger m-0 data-payment-status";
       } else {
         paymentStatusEl.textContent = "PAID";
-        // Apply success CSS class
         paymentStatusEl.className =
           "label text-success m-0 data-payment-status";
       }
     }
 
-    // 6. Navigation
-    const scanBtn =
-      rootElement.querySelector(".scan-parcel-btn") ||
-      rootElement.querySelector(".scan-btn");
+    // Contact Phone (Deeply Nested)
+    const phone =
+      stopData.order?.customer?.user?.phone_no ||
+      stopData.order?.Customer?.phone ||
+      stopData.order?.Customer?.phone_no ||
+      "Not available";
+    safeSetText(".data-phone-number", phone);
+
+    // Special Instructions
+    const instructions =
+      stopData.order?.notes ||
+      stopData.order?.Customer?.instructions ||
+      stopData.order?.SpecialInstructions ||
+      "No special instructions provided";
+    safeSetText(".data-special-instructions", instructions);
+
+    // 5. Navigation: Setup Scan Button
+    const scanBtn = rootElement.querySelector(".scan-btn");
     if (scanBtn) {
       scanBtn.addEventListener("click", (e) => {
         e.preventDefault();
+        const orderId = stopData.order_id || stopData.order?.OrderID;
 
-        const orderId = order?.OrderID;
         if (orderId) {
-          // Save OrderID as expected_order_id for scanning validation
           localStorage.setItem("expected_order_id", orderId);
-
-          // SPA Navigation to /scan-qr with query param
-          const path = `/scan-qr?orderId=${orderId}`;
-          window.history.pushState({}, "", path);
+          window.history.pushState({}, "", `/qr-scan-page?orderId=${orderId}`);
           window.dispatchEvent(new Event("popstate"));
-        } else {
-          console.error("Cannot navigate: OrderID is missing from the data.");
         }
+      });
+    }
+
+    // 6. Navigation: Setup Report Failed Delivery Button
+    const reportBtn = rootElement.querySelector(".report-issue-btn");
+    if (reportBtn) {
+      // Update text to be more specific
+      reportBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        Report Failed Delivery`;
+
+      reportBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const orderId = stopData.order_id || stopData.order?.OrderID;
+        const path = `/failed-delivery-page?stopId=${stopId}&orderId=${orderId || ""}`;
+
+        window.history.pushState({}, "", path);
+        window.dispatchEvent(new Event("popstate"));
+      });
+    }
+
+    // Update Status Badge if available
+    const statusBadge = rootElement.querySelector(".data-status");
+    if (statusBadge && stopData.actual_arrival_time) {
+      statusBadge.textContent = "ARRIVED";
+      statusBadge.classList.replace("neutral", "success");
+    }
+
+    // 7. Navigation: Back to Route
+    const backBtn = rootElement.querySelector(".back-button");
+    if (backBtn) {
+      backBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.history.pushState({}, "", "/active-route-page");
+        window.dispatchEvent(new Event("popstate"));
       });
     }
   } catch (error) {
     console.error("Critical error in Stop Details View:", error);
+    renderError(
+      rootElement,
+      "Failed to load stop details. Please check your connection.",
+    );
   }
 }
 
 /**
- * Cleanup logic when navigating away
+ * Renders an error state in the container.
  */
-export function unmount() {
-  // Shared router handles clearing innerHTML; no custom cleanup required here.
+function renderError(rootElement, message) {
+  const container = rootElement.querySelector(".stop-details-container");
+  if (container) {
+    container.innerHTML = `
+      <div class="stack items-center justify-center p-24 text-center">
+        <div class="icon-button danger mb-16" style="width: 64px; height: 64px; pointer-events: none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h2 class="heading-md">Data Load Failed</h2>
+        <p class="helper-text">${message}</p>
+        <button class="button primary mt-24" onclick="window.history.back()">Go Back</button>
+      </div>`;
+  }
 }
+
+export function unmount() {}
