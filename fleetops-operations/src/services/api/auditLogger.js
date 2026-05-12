@@ -27,7 +27,7 @@ export async function getAuditLogs(filters = {}) {
 
         if (data.success) {
             return data.data.data.map(log => {
-                
+
                 let ctx = log.context;
                 if (typeof ctx === 'string') {
                     try { ctx = JSON.parse(ctx); } catch (e) { ctx = {}; }
@@ -48,7 +48,7 @@ export async function getAuditLogs(filters = {}) {
                     userId: log.user_id || 'System',
                     userRole: log.channel,
                     entity: log.module,
-                    action: finalAction, 
+                    action: finalAction,
                     timestamp: log.created_at,
                     details: log.message,
                     oldValue: null,
@@ -56,7 +56,7 @@ export async function getAuditLogs(filters = {}) {
                 };
             });
         }
-        
+
         return [];
     } catch (error) {
         console.error("Failed to fetch audit logs:", error.data?.message || error.message);

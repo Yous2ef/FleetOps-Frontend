@@ -1,4 +1,4 @@
-import { getInventory, updateInventory } from '../../services/api/inventory.js';
+import { getInventory, createPart, updatePart, adjustStock } from '../../services/api/inventory.js';
 import { getSettings } from '../../services/api/settings.js';
 import { logAuditAction } from '../../services/api/auditLogger.js';
 import { createIcons, icons } from '/node_modules/lucide/dist/esm/lucide.mjs';
@@ -21,10 +21,7 @@ const formatCurrency = (value) => {
 
 // Stock status logic using GLOBAL settings threshold
 const getStockStatus = (qty, itemMinThreshold) => {
-    // Override item specific threshold with global if applicable, but usually items have their own. 
-    // The prompt requested linking the system, so we'll use the global threshold as a base modifier or direct override.
     const threshold = globalSettings ? globalSettings.fleetPolicies.lowStockThreshold : itemMinThreshold;
-    
     if (qty === 0) return { label: 'Out of Stock', class: 'status-out-stock', fillClass: 'red' };
     if (qty <= threshold) return { label: 'Low Stock', class: 'status-low-stock', fillClass: 'orange' };
     return { label: 'In Stock', class: 'status-in-stock', fillClass: 'green' };
@@ -40,13 +37,9 @@ const computeAnalytics = (data) => {
     data.forEach(item => {
         totalItems += item.quantity;
         totalValue += (item.quantity * item.unitPrice);
-        
         const status = getStockStatus(item.quantity, item.minThreshold).label;
-        if (status === 'Out of Stock') {
-            outOfStockCount++;
-        } else if (status === 'Low Stock') {
-            lowStockCount++;
-        }
+        if (status === 'Out of Stock') outOfStockCount++;
+        else if (status === 'Low Stock') lowStockCount++;
     });
 
     return { totalItems, totalValue, lowStockCount, outOfStockCount };
@@ -60,18 +53,16 @@ const render = () => {
     const searchInput = root.querySelector('#inventory-search');
     const categoryFilter = root.querySelector('#category-filter');
     const activeStatusPill = root.querySelector('#status-filters .pill.active');
-    
+
     const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
     const categoryVal = categoryFilter ? categoryFilter.value : 'All';
     const statusVal = activeStatusPill ? activeStatusPill.dataset.status : 'All';
 
     let filteredData = state.filter(item => {
-        const matchesSearch = item.name.toLowerCase().includes(searchVal) || 
-                              item.sku.toLowerCase().includes(searchVal) || 
-                              item.id.toLowerCase().includes(searchVal);
-        
+        const matchesSearch = item.name.toLowerCase().includes(searchVal) ||
+            item.sku.toLowerCase().includes(searchVal) ||
+            item.id.toLowerCase().includes(searchVal);
         const matchesCat = categoryVal === 'All' || item.category === categoryVal;
-        
         const itemStatus = getStockStatus(item.quantity, item.minThreshold).label;
         const matchesStatus = statusVal === 'All' || itemStatus === statusVal;
 
@@ -80,7 +71,6 @@ const render = () => {
 
     // Render Analytics
     const analytics = computeAnalytics(state);
-    
     const countEl = root.querySelector('#tracked-parts-count');
     if (countEl) countEl.textContent = `${state.length} parts tracked`;
 
@@ -129,7 +119,7 @@ const render = () => {
                 const status = getStockStatus(item.quantity, item.minThreshold);
                 const progressPct = Math.min(100, Math.round((item.quantity / item.maxLevel) * 100));
                 const currentThreshold = globalSettings ? globalSettings.fleetPolicies.lowStockThreshold : item.minThreshold;
-                
+
                 tr.innerHTML = `
                     <td class="part-id">${item.id}</td>
                     <td class="part-name">${item.name}</td>
@@ -150,7 +140,7 @@ const render = () => {
                     <td><strong>${formatCurrency(item.quantity * item.unitPrice)}</strong></td>
                     <td>${item.location}</td>
                     <td>${item.supplier}</td>
-                    <td>${new Date(item.lastRestocked).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</td>
+                    <td>${item.lastRestocked ? new Date(item.lastRestocked).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</td>
                     <td>
                         <button class="action-btn view-details-btn" data-id="${item.id}" title="View Details">
                             <i data-lucide="eye"></i>
@@ -167,15 +157,11 @@ const render = () => {
 
 // Event Handlers
 const handleInput = (e) => {
-    if (e.target.id === 'inventory-search') {
-        render();
-    }
+    if (e.target.id === 'inventory-search') render();
 };
 
 const handleChange = (e) => {
-    if (e.target.id === 'category-filter') {
-        render();
-    }
+    if (e.target.id === 'category-filter') render();
 };
 
 const handleClick = async (e) => {
@@ -209,7 +195,7 @@ const handleClick = async (e) => {
         closeAllModals();
         return;
     }
-    
+
     // Modal background click
     if (e.target.classList.contains('modal-overlay') && !e.target.closest('.modal-content')) {
         closeAllModals();
@@ -224,29 +210,39 @@ const handleClick = async (e) => {
         openFormModal(id);
         return;
     }
-    
-    // Quick Restock (+10) simulation using POST API
+
+    // Quick Restock (+10) using backend API
     const restockBtn = e.target.closest('#restock-btn');
     if (restockBtn) {
         const id = restockBtn.dataset.id;
         const itemIndex = state.findIndex(i => i.id === id);
+
         if (itemIndex !== -1) {
             restockBtn.innerHTML = '<i data-lucide="loader-circle"></i> Restocking...';
             createIcons({ icons });
             restockBtn.disabled = true;
-            
+
             const oldQty = state[itemIndex].quantity;
-            state[itemIndex].quantity += 10;
-            state[itemIndex].lastRestocked = new Date().toISOString().split('T')[0];
-            
-            // Sync with backend API
-            await updateInventory(state);
-            
-            // Log to Audit Trail
-            await logAuditAction("ADM-001", "Admin", "Updated", "SparePart", id, { quantity: oldQty }, { quantity: state[itemIndex].quantity });
-            
-            render();
-            openDetailsModal(id);
+
+            try {
+                // نكلم الباك إند يضيف الكمية
+                await adjustStock(id, 10, 'add');
+
+                // تحديث الواجهة والـ State من الداتا بيز مباشرة
+                state = await getInventory();
+
+                const updatedItem = state.find(i => i.id === id);
+                const newQty = updatedItem ? updatedItem.quantity : (oldQty + 10);
+
+                // Audit Log
+                await logAuditAction("ADM-001", "Admin", "Updated", "SparePart", id, { quantity: oldQty }, { quantity: newQty });
+            } catch (error) {
+                console.error("Failed to restock:", error);
+                alert("Error restocking part. Please try again.");
+            } finally {
+                render();
+                openDetailsModal(id);
+            }
         }
         return;
     }
@@ -255,7 +251,7 @@ const handleClick = async (e) => {
 const handleSubmit = async (e) => {
     if (e.target.id === 'part-form') {
         e.preventDefault();
-        
+
         const id = root.querySelector('#form-id').value;
         const submitBtn = e.target.querySelector('button[type="submit"]');
         const originalText = submitBtn.textContent;
@@ -272,34 +268,40 @@ const handleSubmit = async (e) => {
             maxLevel: parseInt(root.querySelector('#form-max').value, 10),
             unitPrice: parseFloat(root.querySelector('#form-price').value),
             location: root.querySelector('#form-location').value,
-            supplier: root.querySelector('#form-supplier').value,
-            lastRestocked: new Date().toISOString().split('T')[0],
-            monthlyUsage: [0, 0, 0, 0, 0, 0] // Mock default
+            supplier: root.querySelector('#form-supplier').value
         };
 
-        if (id) {
-            // Edit
-            const index = state.findIndex(i => i.id === id);
-            if (index !== -1) {
-                const oldItem = { ...state[index] };
-                state[index] = { ...state[index], ...formItem, monthlyUsage: state[index].monthlyUsage };
-                await logAuditAction("ADM-001", "Admin", "Updated", "SparePart", id, oldItem, state[index]);
+        try {
+            if (id) {
+                // تعديل
+                const index = state.findIndex(i => i.id === id);
+                const oldItem = index !== -1 ? { ...state[index] } : null;
+
+                await updatePart(id, formItem);
+                state = await getInventory(); // جلب الداتا الجديدة
+
+                const updatedItem = state.find(i => i.id === id);
+                if (oldItem && updatedItem) {
+                    await logAuditAction("ADM-001", "Admin", "Updated", "SparePart", id, oldItem, updatedItem);
+                }
+            } else {
+                // إضافة
+                const newPart = await createPart(formItem);
+                state = await getInventory(); // جلب الداتا الجديدة
+
+                const createdId = newPart && newPart.id ? newPart.id : (state[state.length - 1]?.id || 'NEW-PRT');
+                await logAuditAction("ADM-001", "Admin", "Created", "SparePart", createdId, null, newPart || formItem);
             }
-        } else {
-            // Add
-            formItem.id = 'PRT-' + (1000 + state.length + 1);
-            state.push(formItem);
-            await logAuditAction("ADM-001", "Admin", "Created", "SparePart", formItem.id, null, formItem);
+        } catch (error) {
+            console.error("Failed to save part:", error);
+            alert("Error saving part data. Please try again.");
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+
+            closeAllModals();
+            render();
         }
-
-        // Post to storage API
-        await updateInventory(state);
-
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-        
-        closeAllModals();
-        render();
     }
 };
 
@@ -315,9 +317,9 @@ const openFormModal = (id = null) => {
     const modal = root.querySelector('#form-modal');
     const form = root.querySelector('#part-form');
     const title = root.querySelector('#form-modal-title');
-    
+
     form.reset();
-    
+
     if (id) {
         title.textContent = 'Edit Part';
         const item = state.find(i => i.id === id);
@@ -348,7 +350,7 @@ const openDetailsModal = (id) => {
 
     const modal = root.querySelector('#item-modal');
     const content = root.querySelector('#item-modal-content');
-    
+
     const months = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'];
     let chartHtml = '';
     if (item.monthlyUsage && item.monthlyUsage.length === 6) {
@@ -400,7 +402,7 @@ const openDetailsModal = (id) => {
             <div class="detail-row"><span class="detail-label">Total Value</span><span class="detail-value">${formatCurrency(item.quantity * item.unitPrice)}</span></div>
             <div class="detail-row"><span class="detail-label">Location</span><span class="detail-value">${item.location}</span></div>
             <div class="detail-row"><span class="detail-label">Supplier</span><span class="detail-value">${item.supplier}</span></div>
-            <div class="detail-row"><span class="detail-label">Last Restocked</span><span class="detail-value">${new Date(item.lastRestocked).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</span></div>
+            <div class="detail-row"><span class="detail-label">Last Restocked</span><span class="detail-value">${item.lastRestocked ? new Date(item.lastRestocked).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</span></div>
         </div>
 
         <div class="modal-chart-area">
@@ -426,24 +428,22 @@ const openDetailsModal = (id) => {
 export async function mount(rootElement) {
     root = rootElement;
     createIcons({ icons });
-    
-    // Disable interactions or show a loading state on the table
+
     const tableBody = root.querySelector('#inventory-table-body');
     if (tableBody) tableBody.innerHTML = '<tr><td colspan="14" style="text-align:center;"><i data-lucide="loader-circle"></i> Loading Data...</td></tr>';
     createIcons({ icons });
-    
+
     try {
         const [invData, setObj] = await Promise.all([
             getInventory(),
             getSettings()
         ]);
-        
+
         state = invData;
         globalSettings = setObj;
 
         render();
 
-        // Attach event listeners
         root.addEventListener('input', handleInput);
         root.addEventListener('change', handleChange);
         root.addEventListener('click', handleClick);

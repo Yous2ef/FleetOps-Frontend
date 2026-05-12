@@ -1,7 +1,7 @@
-﻿import { getInventory, updateInventory } from '../../services/api/inventory.js';
+﻿import { getInventory, adjustStock } from '../../services/api/inventory.js';
 import { getSettings } from '../../services/api/settings.js';
 import { logAuditAction } from '../../services/api/auditLogger.js';
-import { createIcons, icons } from '../../../../node_modules/lucide/dist/esm/lucide.mjs';
+import { createIcons, icons } from '/node_modules/lucide/dist/esm/lucide.mjs';
 
 let root = null;
 let state = [];
@@ -37,15 +37,21 @@ const render = () => {
     const searchInput = root.querySelector('#inventory-search');
     const categoryFilter = root.querySelector('#category-filter');
     const activeStatusPill = root.querySelector('#status-filters .pill.active');
-    
+
     const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
     const categoryVal = categoryFilter ? categoryFilter.value : 'All';
     const statusVal = activeStatusPill ? activeStatusPill.dataset.status : 'All';
 
     let filteredData = state.filter(item => {
-        const matchesSearch = item.name.toLowerCase().includes(searchVal) || 
-                              item.sku.toLowerCase().includes(searchVal) || 
-                              item.id.toLowerCase().includes(searchVal);
+        // حماية من قيم الـ Null
+        const name = item.name || '';
+        const sku = item.sku || '';
+        const itemId = item.id || '';
+
+        const matchesSearch = name.toLowerCase().includes(searchVal) ||
+            sku.toLowerCase().includes(searchVal) ||
+            itemId.toLowerCase().includes(searchVal);
+
         const matchesCat = categoryVal === 'All' || item.category === categoryVal;
         const itemStatus = getStockStatus(item.quantity, item.minThreshold).label;
         const matchesStatus = statusVal === 'All' || itemStatus === statusVal;
@@ -86,7 +92,8 @@ const render = () => {
                 const status = getStockStatus(item.quantity, item.minThreshold);
                 const progressPct = Math.min(100, Math.round((item.quantity / item.maxLevel) * 100));
                 const currentThreshold = globalSettings ? globalSettings.fleetPolicies.lowStockThreshold : item.minThreshold;
-                
+
+                // 9 أعمدة فقط متوافقة مع ملف الـ HTML بتاع الصيانة وفيها زرار Use
                 tr.innerHTML = `
                     <td class="part-id">${item.id}</td>
                     <td class="part-name">${item.name}</td>
@@ -136,7 +143,7 @@ const handleClick = (e) => {
         return;
     }
 
-    // Open Request Modal
+    // Open Request Modal (زرار الـ Use)
     const requestBtn = e.target.closest('.request-btn');
     if (requestBtn) {
         const id = requestBtn.dataset.id;
@@ -150,7 +157,7 @@ const handleClick = (e) => {
         closeAllModals();
         return;
     }
-    
+
     if (e.target.classList.contains('modal-overlay') && !e.target.closest('.modal-content')) {
         closeAllModals();
         return;
@@ -160,15 +167,15 @@ const handleClick = (e) => {
 const handleSubmit = async (e) => {
     if (e.target.id === 'request-form') {
         e.preventDefault();
-        
+
         const id = root.querySelector('#req-part-id').value;
         const reqQty = parseInt(root.querySelector('#req-qty').value, 10);
         const vehicleId = root.querySelector('#req-vehicle-id').value;
-        const notes = root.querySelector('#req-notes').value;
-        
+        // const notes = root.querySelector('#req-notes').value;
+
         const itemIndex = state.findIndex(i => i.id === id);
         if (itemIndex === -1) return;
-        
+
         if (reqQty > state[itemIndex].quantity) {
             alert('Cannot request more parts than are available in stock!');
             return;
@@ -181,27 +188,37 @@ const handleSubmit = async (e) => {
         submitBtn.disabled = true;
 
         const oldQty = state[itemIndex].quantity;
-        state[itemIndex].quantity -= reqQty;
-        
-        // Sync with API
-        await updateInventory(state);
-        
-        // Audit Log
-        await logAuditAction(
-            "MEC-001", 
-            "Mechanic",
-            "Consumed", 
-            "SparePart",
-            state[itemIndex].id, 
-            { quantity: oldQty }, 
-            { quantity: state[itemIndex].quantity, vehicle: vehicleId }
-        );
 
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-        
-        closeAllModals();
-        render();
+        try {
+            // نكلم الباك إند يخصم الكمية (Deduct)
+            await adjustStock(id, reqQty, 'deduct');
+
+            // تحديث الواجهة من الداتا بيز مباشرة
+            state = await getInventory();
+
+            const updatedItem = state.find(i => i.id === id);
+            const newQty = updatedItem ? updatedItem.quantity : (oldQty - reqQty);
+
+            // Audit Log
+            await logAuditAction(
+                "MEC-001",
+                "Mechanic",
+                "Consumed",
+                "SparePart",
+                id,
+                { quantity: oldQty },
+                { quantity: newQty, vehicle: vehicleId }
+            );
+
+        } catch (error) {
+            console.error("Failed to process request:", error);
+            alert("Error adjusting stock. Please try again.");
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            closeAllModals();
+            render();
+        }
     }
 };
 
@@ -218,16 +235,16 @@ const openRequestModal = (id) => {
     if (!item) return;
 
     const modal = root.querySelector('#request-modal');
-    
+
     root.querySelector('#req-part-id').value = item.id;
     root.querySelector('#request-part-name').textContent = `${item.name} (${item.id})`;
     root.querySelector('#req-max-qty').value = item.quantity;
     root.querySelector('#req-max-label').textContent = `/ ${item.quantity} available`;
-    
+
     const qtyInput = root.querySelector('#req-qty');
     qtyInput.max = item.quantity;
     qtyInput.value = 1;
-    
+
     root.querySelector('#req-vehicle-id').value = '';
     root.querySelector('#req-notes').value = '';
 
@@ -239,17 +256,17 @@ const openRequestModal = (id) => {
 // Lifecycle Methods
 export async function mount(rootElement) {
     root = rootElement;
-    
+
     const tableBody = root.querySelector('#inventory-table-body');
-    if (tableBody) tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center;"><i data-lucide="loader-circle"></i> Loading Data...</td></tr>';
+    if (tableBody) tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center;"><i data-lucide="loader-circle"></i> Loading Data...</td></tr>';
     createIcons({ icons });
-    
+
     try {
         const [invData, setObj] = await Promise.all([
             getInventory(),
             getSettings()
         ]);
-        
+
         state = invData;
         globalSettings = setObj;
 
@@ -261,18 +278,18 @@ export async function mount(rootElement) {
         root.addEventListener('submit', handleSubmit);
     } catch (err) {
         console.error("Failed to load data", err);
-        if (tableBody) tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: red;">Failed to load data.</td></tr>';
+        if (tableBody) tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: red;">Failed to load data.</td></tr>';
     }
 }
 
 export function unmount(rootElement) {
     if (!root) return;
-    
+
     root.removeEventListener('input', handleInput);
     root.removeEventListener('change', handleChange);
     root.removeEventListener('click', handleClick);
     root.removeEventListener('submit', handleSubmit);
-    
+
     root = null;
     state = [];
     globalSettings = null;

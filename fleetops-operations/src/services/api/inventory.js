@@ -1,43 +1,48 @@
 import api from "/shared/api-handler.js";
-import { initialMockData, INVENTORY_STORAGE_KEY } from "../storage/inventory.js";
 
-// ─── Global Setup ─────────────────────────────────────────────────────────────
-// إعداد قاعدة URL وهمية (يمكن تعديله لاحقًا ليتوافق مع API حقيقي)
-api.setBaseURL("http://localhost:3000");
+// دالة مساعدة لاستخراج الـ ID الرقمي من صيغة (PRT-1001)
+const extractId = (str) => str ? str.replace('PRT-', '') : null;
 
-// دالة محاكاة تأخير الشبكة لزيادة واقعية التجربة
-const delay = (ms = 100) => new Promise(resolve => setTimeout(resolve, ms));
+api.setBaseURL("http://localhost:8000");
 
-// ─── API Methods ────────────────────────────────────────────────────────────
+// دالة مساعدة لتحويل مسميات الفرونت لمسميات الداتا بيز
+const mapToBackend = (data) => ({
+    name: data.name,
+    sku: data.sku,
+    category: data.category,
+    stock_quantity: data.quantity,
+    minimum_stock: data.minThreshold,
+    reorder_level: data.maxLevel,
+    unit_price: data.unitPrice,
+    description: data.location, // بنستخدم الوصف كمكان التخزين مؤقتاً
+    supplier_name: data.supplier
+});
 
-// API: GET /api/inventory
 export async function getInventory() {
-    await delay(100);
-    const stored = localStorage.getItem(INVENTORY_STORAGE_KEY);
-    if (!stored) {
-        localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(initialMockData));
-        return [...initialMockData];
-    }
-    return JSON.parse(stored);
+    const res = await api.get('/api/v1/maintenance/parts');
+    // api-handler المفروض بيرجع { data: ... }
+    return res.data || res;
 }
 
-// API: POST/PUT /api/inventory(localStorage)
-export async function updateInventory(newInventory) {
-    await delay(100);
-    localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(newInventory));
-    return { success: true };
-}
-
-// Helper function to get a specific part by ID
 export async function getPartById(partId) {
-    const inventory = await getInventory();
-    return inventory.find(part => part.id === partId) || null;
+    const res = await api.get(`/api/v1/maintenance/parts/${extractId(partId)}`);
+    return res.data || res;
 }
-// Exporting a combined object for easier imports in components(لو حد منكم عاوز ياخد ال inventory بردو استعملوا دي )
-const InventoryApi = {
-    getInventory,
-    updateInventory,
-    getPartById
-};
 
+export async function createPart(partData) {
+    const res = await api.post('/api/v1/maintenance/parts', mapToBackend(partData));
+    return res.data || res;
+}
+
+export async function updatePart(id, partData) {
+    const res = await api.put(`/api/v1/maintenance/parts/${extractId(id)}`, mapToBackend(partData));
+    return res.data || res;
+}
+
+export async function adjustStock(id, quantity, operation) {
+    const res = await api.post(`/api/v1/maintenance/parts/${extractId(id)}/adjust-stock`, { quantity, operation });
+    return res.data || res;
+}
+
+const InventoryApi = { getInventory, createPart, updatePart, adjustStock, getPartById };
 export default InventoryApi;
