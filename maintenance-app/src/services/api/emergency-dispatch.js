@@ -48,8 +48,8 @@ function shapeIncidents(raw) {
             type: r.vehicle?.VehicleType || 'Truck',
         },
         driver: {
-            name: r.driver?.DriverName || r.driver?.name || 'Unknown Driver',
-            phone: r.driver?.phone_no || 'N/A'
+            name: r.driver?.user?.name || r.driver?.DriverName || r.driver?.name || 'Unknown Driver',
+            phone: r.driver?.user?.phone_no || r.driver?.phone_no || 'N/A'
         },
         location: {
             address: r.location || 'Unknown Location',
@@ -64,6 +64,21 @@ function shapeIncidents(raw) {
         })(),
         timestamp: r.incident_ts || r.created_at,
         issue: r.description || r.type || 'Breakdown reported'
+    }));
+}
+
+function shapeMechanics(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw.map((m, i) => ({
+        id: m.id ?? m.mechanic_id ?? i,
+        name: m.name ?? m.mechanic_name ?? m.user?.name ?? 'Unknown',
+        phone: m.phone ?? m.phone_no ?? m.user?.phone_no ?? 'N/A',
+        status: m.status ?? 'Available',
+        specialty: m.specialty ?? m.specialization ?? 'General',
+        distance: m.distance ?? 'N/A',
+        eta: m.eta ?? 'N/A',
+        initials: m.initials ?? (m.name ? m.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'ME'),
+        avatarType: m.avatarType ?? `avatar-${(i % 4) + 1}`,
     }));
 }
 
@@ -82,7 +97,8 @@ const emergencyDispatchService = {
     },
 
     getMechanics: async (incidentId) => {
-        return await get(`/api/v1/maintenance/emergency/nearby-mechanics/${incidentId}`);
+        const raw = await get(`/api/v1/maintenance/emergency/nearby-mechanics/${incidentId}`);
+        return shapeMechanics(raw);
     },
     
     dispatchMechanic: async (incidentId, mechanicId) => {

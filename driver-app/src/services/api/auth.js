@@ -2,29 +2,31 @@ import api from "/shared/api-handler.js";
 
 // ─── Global Setup ─────────────────────────────────────────────────────────────
 
+// The base URL for our backend API
 api.setBaseURL("http://localhost:8000");
 
 // ─── API Methods ─────────────────────────────────────────────────────────────
 
 /**
- * Fetches the full list of fleet vehicles from the dispatch API.
- *
- * Response shape per item:
- *   { vehicle_id, model, type, plate_number, status }
- *
- * @returns {Promise<Array>} Array of vehicle objects.
+ * Calls the backend logout API to securely invalidate the driver's session.
+ * 
+ * @returns {Promise<Object>} The API response data.
+ * @throws {Error} If the request fails (though the view handler should handle it gracefully).
  */
-async function getAllVehicles() {
-  const response = await api.get("/api/v1/dispatch/vehicles/");
-  // The backend returns { success: true, data: [...] }
-  // We need to return the inner array.
-  return Array.isArray(response.data?.data) ? response.data.data : [];
+async function logoutApi() {
+  /**
+   * NOTE: The apiHandler automatically retrieves the Bearer token 
+   * from localStorage on every request and attaches it to the 
+   * 'Authorization' header as required.
+   */
+  const response = await api.post("/api/v1/auth/logout");
+  return response.data;
 }
 
 // ────────────────────────────────────────────────────────────────
 
-const VehiclesStorage = {
-  getAllVehicles,
+const AuthStorage = {
+  logoutApi,
 };
 
-export default VehiclesStorage;
+export default AuthStorage;

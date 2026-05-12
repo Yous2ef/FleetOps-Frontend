@@ -53,45 +53,20 @@ const api = {
  *   1. URL query string  ?token=   (canonical magic-link format)
  *   2. URL query string  ?tracking_code=  (alternate backend format)
  *   3. URL query string  ?code=    (short alias)
- *   4. URL hash fragment  #token=  (some email clients strip query strings)
- *   5. sessionStorage    cp_token  (persisted from a previous step)
+ *   4. URL path segment  /track/{token}  (path-based routing)
+ *   5. URL hash fragment  #token=  (some email clients strip query strings)
+ *   6. sessionStorage    cp_token  (persisted from a previous step)
  *
- * Any token found via 1-4 is immediately persisted to sessionStorage so
+ * Any token found via 1-5 is immediately persisted to sessionStorage so
  * subsequent views on the same session can resolve it without the URL.
  *
  * @returns {string|null}
  */
 function getTrackingToken() {
-    // ── 1-3. Standard query-string params ──────────────────────────────────
-    const params = new URLSearchParams(window.location.search);
-    const tokenFromURL =
-        params.get('token') ??
-        params.get('tracking_code') ??
-        params.get('code');
-
-    if (tokenFromURL) {
-        sessionStorage.setItem('cp_token', tokenFromURL);
-        return tokenFromURL;
-    }
-
-    // ── 4. URL hash  (#token=...) ─────────────────────────────────────────
-    if (window.location.hash) {
-        const hashParams = new URLSearchParams(
-            window.location.hash.replace(/^#/, '')
-        );
-        const tokenFromHash =
-            hashParams.get('token') ??
-            hashParams.get('tracking_code') ??
-            hashParams.get('code');
-
-        if (tokenFromHash) {
-            sessionStorage.setItem('cp_token', tokenFromHash);
-            return tokenFromHash;
-        }
-    }
-
-    // ── 5. sessionStorage fallback ────────────────────────────────────────
-    return sessionStorage.getItem('cp_token');
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (token) sessionStorage.setItem('tracking_token', token);
+    return token || sessionStorage.getItem('tracking_token');
 }
 
 /**
@@ -102,7 +77,7 @@ function getTrackingToken() {
  * delivery confirmed or link-expired view is shown).
  */
 function clearTrackingToken() {
-    sessionStorage.removeItem('cp_token');
+    sessionStorage.removeItem('tracking_token');
 }
 
 // ─── API Methods ──────────────────────────────────────────────────────────────

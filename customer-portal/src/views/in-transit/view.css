@@ -7,6 +7,7 @@
 .it-pulse-dot { width: 8px; height: 8px; background: white; border-radius: 50%; animation: pulse 1.5s infinite; }
 
 /* Map */
+#tracking-map { height: 400px !important; }
 .it-map-wrapper { height: 260px; position: relative; overflow: hidden; }
 .it-leaflet-map { width: 100%; height: 100%; z-index: 1; }
 
