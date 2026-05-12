@@ -102,6 +102,7 @@ function initDashboardShell() {
     const collapseBtn = document.getElementById("sidebar-collapse-btn");
     const mobileBtn = document.getElementById("sidebar-mobile-btn");
     const collapseStateKey = "maintenance-app:sidebar-collapsed";
+    const signOutBtn = document.querySelector(".sidebar-signout");
 
     if (!shell) {
         return;
@@ -127,6 +128,12 @@ function initDashboardShell() {
 
     window.addEventListener("route:changed", () => {
         shell.classList.remove("is-sidebar-open");
+    });
+
+    signOutBtn?.addEventListener("click", () => {
+        clearAuth();
+        window.history.replaceState({}, "", "/login");
+        window.dispatchEvent(new PopStateEvent("popstate"));
     });
 }
 

@@ -250,7 +250,7 @@ function handleClick(e) {
 }
 
 // ─── Mount / Unmount ─────────────────────────────────────────────────────────
-export function mount(rootElement) {
+export async function mount(rootElement) {
     root = rootElement;
     cleanupFns = [];
 
@@ -263,7 +263,7 @@ export function mount(rootElement) {
     }
 
     try {
-        vehicle = CostToValueApi.getVehicleByPlate(plate);
+        vehicle = await CostToValueApi.getVehicleByPlate(plate);
 
         if (!vehicle) {
             root.querySelector("#ctvd-loading").textContent = `Vehicle "${plate}" not found.`;
