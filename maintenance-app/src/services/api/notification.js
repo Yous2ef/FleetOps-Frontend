@@ -208,13 +208,6 @@ export async function markAllAsRead() {
         return n;
     });
     
-    // Call the backend asynchronously (fire-and-forget or await)
-    try {
-        await api.post("/api/v1/notifications/mark-all-read");
-    } catch (e) {
-        console.error("Failed to mark all as read on backend", e);
-    }
-    
     return { success: true, updated };
 }
 
@@ -229,13 +222,6 @@ export async function markAsRead(id) {
     const idx = _cache.findIndex((n) => n.id == id);
     if (idx !== -1) {
         _cache[idx] = { ..._cache[idx], read: true };
-        
-        try {
-            await api.patch(`/api/v1/notifications/${id}/read`);
-        } catch (e) {
-            console.error(`Failed to mark ${id} as read on backend`, e);
-        }
-        
         return { success: true };
     }
     return { success: false };
