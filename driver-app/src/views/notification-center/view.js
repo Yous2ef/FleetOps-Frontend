@@ -1,153 +1,164 @@
+import RoutesStorage from "../../services/api/routes.js";
+
+let listContainer;
+let modal;
+let modalTitle;
+let modalBody;
+let closeBtn;
+
 /**
- * Notification Center Module
- * Handles rendering of alerts and modal interactions.
+ * Mounts the Notification Center view.
+ * @param {HTMLElement} element - The parent container.
  */
+export async function mount(element) {
+  listContainer = element.querySelector(".notification-list-container");
+  modal = element.querySelector(".notification-modal");
+  modalTitle = element.querySelector(".modal-title");
+  modalBody = element.querySelector(".modal-body");
+  closeBtn = element.querySelector(".modal-close");
 
-const NOTIFICATIONS_DATA = [
-    {
-        id: 'n1',
-        type: 'route',
-        category: 'dispatch',
-        title: 'New Route Assigned',
-        desc: 'Route #87721 Metro-North Distribution Hub to Regional Port. Total distance 42.4 mi.',
-        time: 'JUST NOW',
-        status: 'unread',
-        routeData: {
-            id: '87721',
-            origin: 'Metro-North Distribution Hub',
-            destination: 'Regional Port',
-            distance: '42.4 mi'
-        }
-    },
-    {
-        id: 'n2',
-        type: 'dispatch',
-        category: 'dispatch',
-        title: 'Dispatch Message',
-        desc: '"Traffic congestion on I-95 North near Exit 24. Suggest using detour via State Route 1."',
-        from: 'Marcus (Control Center)',
-        time: '12 MINS AGO',
-        status: 'unread'
-    },
-    {
-        id: 'n3',
-        type: 'break',
-        category: 'system',
-        title: 'Break Reminder',
-        desc: 'Mandatory 30-minute rest break required in the next 15 miles. ELD synchronization active.',
-        time: '45 MINS AGO',
-        status: 'unread'
-    },
-    {
-        id: 'n4',
-        type: 'system',
-        category: 'system',
-        title: 'System Updated',
-        desc: 'FleetOps v2.4.1 applied successfully. Performance metrics optimized for low-latency dispatch.',
-        time: '2 HOURS AGO',
-        status: 'read'
-    },
-    {
-        id: 'n5',
-        type: 'warning',
-        category: 'alert',
-        title: 'Severe Weather Warning',
-        desc: 'Flash flood warning issued for current sector. Heavy rain expected between 14:00 and 17:00.',
-        time: '3 HOURS AGO',
-        status: 'unread'
-    }
-];
+  closeBtn.addEventListener("click", hideModal);
 
-export function mount(rootElement) {
-    const view = rootElement || document;
-    const listContainer = view.querySelector('.notification-list-container');
-    const modalOverlay = view.querySelector('.notification-modal');
-    const modalTitle = view.querySelector('.modal-title');
-    const modalBody = view.querySelector('.modal-body');
-    const modalClose = view.querySelector('.modal-close');
+  const driverId = localStorage.getItem("driver_id");
+  if (!driverId) {
+    renderEmptyState("Driver ID not found. Please log in.");
+    return;
+  }
 
-    if (!listContainer) return;
-
-    function render() {
-        listContainer.innerHTML = '';
-        
-        NOTIFICATIONS_DATA.forEach(n => {
-            const card = document.createElement('div');
-            card.className = `notification-card type-${n.type} ${n.status}`;
-            
-            const iconSvg = getIconSvg(n.type);
-            const extraContent = n.from ? `<p class="notification-from">From: ${n.from}</p>` : '';
-            const actionBtn = n.type === 'route' ? `<button class="button primary accept-route-btn">ACCEPT ROUTE</button>` : '';
-
-            card.innerHTML = `
-                <div class="notification-icon-wrapper">${iconSvg}</div>
-                <div class="notification-content">
-                    <div class="notification-header-row">
-                        <h4 class="notification-title">${n.title}</h4>
-                        <span class="notification-time">${n.time}</span>
-                    </div>
-                    <p class="notification-desc">${n.desc}</p>
-                    ${extraContent}
-                    ${actionBtn}
-                </div>
-            `;
-
-            // Card click for modal
-            card.addEventListener('click', (e) => {
-                if (e.target.classList.contains('accept-route-btn')) return;
-                
-                if (modalOverlay && modalTitle && modalBody) {
-                    modalTitle.textContent = n.title;
-                    modalBody.textContent = n.desc;
-                    modalOverlay.classList.remove('hidden');
-                }
-
-                if (n.status === 'unread') {
-                    n.status = 'read';
-                    render();
-                }
-            });
-
-            // Accept button logic
-            const acceptBtn = card.querySelector('.accept-route-btn');
-            if (acceptBtn) {
-                acceptBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (n.routeData) {
-                        localStorage.setItem('activeRoute', JSON.stringify(n.routeData));
-                        alert('Success: New route accepted.');
-                        window.history.pushState({}, '', '/active-route-page');
-                        window.dispatchEvent(new Event('popstate'));
-                    }
-                });
-            }
-
-            listContainer.appendChild(card);
-        });
-    }
-
-    function getIconSvg(type) {
-        switch(type) {
-            case 'route': return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`;
-            case 'dispatch': return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
-            case 'warning': return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
-            default: return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg>`;
-        }
-    }
-
-    // Modal Close logic
-    if (modalClose) {
-        modalClose.addEventListener('click', () => modalOverlay.classList.add('hidden'));
-    }
-    if (modalOverlay) {
-        modalOverlay.addEventListener('click', (e) => {
-            if (e.target === modalOverlay) modalOverlay.classList.add('hidden');
-        });
-    }
-
-    render();
+  try {
+    renderLoading();
+    const routes = await RoutesStorage.getDriverRoutes(driverId);
+    renderNotifications(routes);
+  } catch (error) {
+    console.error("Failed to fetch routes:", error);
+    renderEmptyState("Unable to load notifications. Please try again later.");
+  }
 }
 
+/**
+ * Unmounts the Notification Center view.
+ */
 export function unmount() {
-    // No persistent listeners to clean up manually
+  if (closeBtn) {
+    closeBtn.removeEventListener("click", hideModal);
+  }
+}
+
+function renderLoading() {
+  listContainer.innerHTML = `
+        <div class="stack items-center justify-center p-20">
+            <div class="spinner"></div>
+            <p class="description mt-10">Loading communications...</p>
+        </div>
+    `;
+}
+
+function renderEmptyState(message) {
+  listContainer.innerHTML = `
+        <div class="card p-24 stack items-center text-center">
+            <div class="notification-icon-wrapper mb-16" style="background: var(--color-surface-low);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell-off"><path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 4.8"/><path d="M17 17H3"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="m2 2 20 20"/></svg>
+            </div>
+            <p class="description">${message}</p>
+        </div>
+    `;
+}
+
+function renderNotifications(routes) {
+  if (!routes || routes.length === 0) {
+    renderEmptyState("No active dispatch routes or alerts found.");
+    return;
+  }
+
+  listContainer.innerHTML = "";
+
+  routes.forEach((route) => {
+    const card = createRouteNotificationCard(route);
+    listContainer.appendChild(card);
+  });
+}
+
+function createRouteNotificationCard(route) {
+  const card = document.createElement("div");
+  card.className = "notification-card type-route unread";
+
+  // In a real app, we might check if it's already accepted
+  const isAccepted =
+    localStorage.getItem(`route_accepted_${route.route_id}`) === "true";
+
+  card.innerHTML = `
+        <div class="notification-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div class="notification-content">
+            <div class="notification-header-row">
+                <h3 class="notification-title">NEW ROUTE ASSIGNED</h3>
+                <span class="notification-time">JUST NOW</span>
+            </div>
+            <p class="notification-desc">
+                Route <strong>#${route.route_id}</strong> is ready for dispatch. 
+                Contains ${route.stops?.length || 0} stops.
+            </p>
+            <p class="notification-from">SYSTEM DISPATCH</p>
+            <button class="button primary accept-route-btn" ${isAccepted ? "disabled" : ""}>
+                ${isAccepted ? "ACCEPTED" : "ACCEPT ROUTE"}
+            </button>
+        </div>
+    `;
+
+  const acceptBtn = card.querySelector(".accept-route-btn");
+  acceptBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    handleAcceptRoute(route, acceptBtn);
+  });
+
+  card.addEventListener("click", () => {
+    showModal(
+      "New Route Assigned",
+      `You have been assigned a new route (#${route.route_id}) with ${route.stops?.length || 0} stops. Please accept the route to begin navigation.`,
+    );
+  });
+
+  return card;
+}
+
+async function handleAcceptRoute(route, button) {
+  button.disabled = true;
+  button.textContent = "ACCEPTING...";
+
+  try {
+    // 1. Call backend API to start/accept the route
+    const response = await RoutesStorage.startRoute(route.route_id);
+
+    if (response.success) {
+      // 2. Update local state
+      localStorage.setItem(`route_accepted_${route.route_id}`, "true");
+      localStorage.setItem("active_route", JSON.stringify(route));
+
+      button.textContent = "ACCEPTED";
+      button.classList.add("secondary");
+
+      // 3. Redirect to active route page after a delay
+      setTimeout(() => {
+        window.location.href = "/active-route-page";
+      }, 800);
+    } else {
+      throw new Error(response.message || "Failed to start route");
+    }
+  } catch (error) {
+    console.error("Failed to accept route:", error);
+    button.disabled = false;
+    button.textContent = "RETRY ACCEPT";
+    alert("Error: " + error.message);
+  }
+}
+
+function showModal(title, body) {
+  modalTitle.textContent = title;
+  modalBody.textContent = body;
+  modal.classList.remove("hidden");
+}
+
+function hideModal() {
+  modal.classList.add("hidden");
 }

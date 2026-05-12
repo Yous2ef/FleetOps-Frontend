@@ -170,7 +170,6 @@ export const routes = [
       js: "/src/views/stats/view.js",
     },
   },
-  
 ];
 
 export const notFoundRoute = {

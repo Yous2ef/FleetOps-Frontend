@@ -55,7 +55,8 @@ export function mount(rootElement) {
             submitBtn.textContent = originalBtnText;
             submitBtn.disabled = false;
           }
-          errorBanner.textContent = "Access Denied: This application is restricted to Drivers only.";
+          errorBanner.textContent =
+            "Access Denied: This application is restricted to Drivers only.";
           errorBanner.style.display = "flex";
           return;
         }
@@ -68,10 +69,10 @@ export function mount(rootElement) {
         }
         localStorage.setItem("role", user.role);
         localStorage.setItem("isAuthenticated", "true");
-        
+
         // Set API Token globally
         api.setAuthToken(token, "Bearer");
-        
+
         errorBanner.style.display = "none";
         errorBanner.textContent = "";
 
@@ -84,9 +85,10 @@ export function mount(rootElement) {
           submitBtn.textContent = originalBtnText;
           submitBtn.disabled = false;
         }
-        
+
         // Display error in banner
-        errorBanner.textContent = err.data?.message || "Invalid Operator ID or Password.";
+        errorBanner.textContent =
+          err.data?.message || "Invalid Operator ID or Password.";
         errorBanner.style.display = "flex";
       }
     };

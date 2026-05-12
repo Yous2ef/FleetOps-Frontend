@@ -1,5 +1,4 @@
 import api from "/shared/api-handler.js";
-import { routes } from "../storage/routes.js"; // TODO: remove when mock methods are integrated
 
 // ─── Global Setup ─────────────────────────────────────────────────────────────
 
@@ -16,6 +15,18 @@ api.setBaseURL("http://localhost:8000");
 async function getDriverRoutes(driver_id) {
   const response = await api.get(`/api/v1/dispatch/routes/driver/${driver_id}`);
   return response.data.data;
+}
+
+/**
+ * Starts/Accepts a route on the backend.
+ * Uses POST /api/v1/dispatch/routes/{routeId}/start
+ *
+ * @param {string|number} routeId - The route ID.
+ * @returns {Promise<Object>} The API response envelope.
+ */
+async function startRoute(routeId) {
+  const response = await api.post(`/api/v1/dispatch/routes/${routeId}/start`);
+  return response.data;
 }
 
 /**
@@ -69,11 +80,11 @@ function markStopDelivered(route_id, stop_id, deliveryProof = null) {
 
 const RoutesStorage = {
   getDriverRoutes,
+  startRoute,
   markArrived,
   getRouteDetails,
   getStopDetails,
   markStopDelivered,
 };
-
 
 export default RoutesStorage;
