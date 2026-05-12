@@ -48,64 +48,59 @@ function initMap(driverCoords, destCoords, driverName) {
   const container = document.getElementById('tracking-map');
   if (!container) return;
 
-  // ── Destroy any previous instance to prevent "already initialised" error
-  if (trackingMap !== null) {
-    trackingMap.remove();
-    trackingMap = null;
-  }
-
-  // ── Create map (no default attribution controls for a cleaner mobile look)
-  trackingMap = L.map('tracking-map', {
-    zoomControl: false,
-    attributionControl: false,
-  });
-
-  // ── OpenStreetMap tile layer
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-  }).addTo(trackingMap);
-
-  // ── Driver marker (teal circular icon using DivIcon)
-  const driverIcon = L.divIcon({
-    className: '',
-    html: `<div class="it-lf-driver-icon">🚚</div>`,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-  });
-
-  const driverMarker = L.marker(driverCoords, { icon: driverIcon })
-    .addTo(trackingMap)
-    .bindPopup(`<strong>${driverName}</strong><br>Driver location`);
-
-  // ── Destination marker (red pin using DivIcon)
-  const destIcon = L.divIcon({
-    className: '',
-    html: `<div class="it-lf-dest-icon">📍</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
-  });
-
-  L.marker(destCoords, { icon: destIcon })
-    .addTo(trackingMap)
-    .bindPopup('<strong>Your location</strong><br>Delivery destination');
-
-  // ── Dashed polyline connecting driver → destination (simulated route)
-  const routeLine = L.polyline([driverCoords, destCoords], {
-    color: '#0d9488',
-    weight: 3,
-    dashArray: '8, 8',
-    opacity: 0.85,
-  }).addTo(trackingMap);
-
-  // ── Auto-zoom to fit both markers with padding
-  trackingMap.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
-
-  // ── Invalidate Size to prevent blank/gray map issues on first render
   setTimeout(() => {
-    if (trackingMap) {
-        trackingMap.invalidateSize();
-    }
-  }, 200);
+    // 1. Initialize Map
+    if (window.trackingMap) { window.trackingMap.remove(); }
+    window.trackingMap = L.map('tracking-map').setView(driverCoords, 13);
+    
+    // 2. Add Tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(window.trackingMap);
+
+    // ── Driver marker (teal circular icon using DivIcon)
+    const driverIcon = L.divIcon({
+      className: '',
+      html: `<div class="it-lf-driver-icon">🚚</div>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+    });
+
+    const driverMarker = L.marker(driverCoords, { icon: driverIcon })
+      .addTo(window.trackingMap)
+      .bindPopup(`<strong>${driverName}</strong><br>Driver location`);
+
+    // ── Destination marker (red pin using DivIcon)
+    const destIcon = L.divIcon({
+      className: '',
+      html: `<div class="it-lf-dest-icon">📍</div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 28],
+    });
+
+    L.marker(destCoords, { icon: destIcon })
+      .addTo(window.trackingMap)
+      .bindPopup('<strong>Your location</strong><br>Delivery destination');
+
+    // ── Dashed polyline connecting driver → destination (simulated route)
+    const routeLine = L.polyline([driverCoords, destCoords], {
+      color: '#0d9488',
+      weight: 3,
+      dashArray: '8, 8',
+      opacity: 0.85,
+    }).addTo(window.trackingMap);
+
+    // ── Auto-zoom to fit both markers with padding
+    window.trackingMap.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+
+    // 3. THE FIX: Force resize after 500ms
+    setTimeout(() => {
+        if (window.trackingMap) {
+            window.trackingMap.invalidateSize(true);
+            console.log("Map forced to re-render.");
+        }
+    }, 500);
+  }, 100);
 }
 
 // ── Lifecycle: init ──────────────────────────────────────────────────────
@@ -146,8 +141,7 @@ export async function init(root, preloadedData = null) {
         </svg>
         <h2 style="font-size:1.1rem;font-weight:700;color:#1e293b;">Missing Tracking Code</h2>
         <p style="font-size:0.9rem;color:#64748b;max-width:280px;">
-          Please open your delivery tracking link from the SMS or email
-          you received to view live updates.
+          Please use the tracking link provided in your SMS/Email
         </p>
       </div>
     `;

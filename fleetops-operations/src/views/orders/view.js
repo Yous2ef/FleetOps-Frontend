@@ -1,4 +1,5 @@
 import OrdersApi from "../../services/api/orders.js";
+import api from "/shared/api-handler.js";
 import {
     createIcons,
     icons,
@@ -77,7 +78,7 @@ function bindPageEvents() {
         () => exportButton?.removeEventListener("click", handleExport),
         () => modalRoot?.removeEventListener("click", handleModalClick),
         () => modalRoot?.removeEventListener("change", handleModalChange),
-        () => modalRoot?.removeEventListener("submit", handleModalSubmit),
+        () => modalRoot?.removeEventListener("submit", handleAddOrder),
         () => document.removeEventListener("keydown", handleEscape),
     );
 }
@@ -299,7 +300,10 @@ function renderDetailsModal(order) {
         return "";
     }
 
-    const timelineContent = renderOrderTimeline(order);
+    // Default active tab. Extended tab switching can be wired up later;
+    // for now the Timeline panel is always shown (it requires no extra data).
+    const activeTab = "timeline";
+    const tabContent = renderOrderTimeline(order);
 
     return `
         <div class="modal-overlay" data-modal-close="overlay">
@@ -338,10 +342,10 @@ function renderDetailsModal(order) {
                             <i data-lucide="square-arrow-out-up-right"></i>
                             <div class="tracking-banner__copy">
                                 <strong>Live Tracking Link (sent to customer automatically)</strong>
-                                <a href="${order.trackingLink}" target="_blank" rel="noreferrer">${order.trackingLink}</a>
+                                <a id="modal-tracking-link" href="${order.tracking_url ?? ''}" target="_blank" rel="noreferrer">${order.tracking_url ?? 'No tracking token assigned yet'}</a>
                             </div>
                         </div>
-                        <button class="button primary" type="button" data-action="copy-link" data-link="${order.trackingLink}">
+                        <button id="modal-copy-btn" class="button primary" type="button" data-action="copy-link" data-link="${order.tracking_url ?? ''}">
                             <i data-lucide="copy"></i>
                             <span>Copy</span>
                         </button>
@@ -632,16 +636,38 @@ async function handleTableClick(event) {
 function handleModalClick(event) {
     const overlay = event.target.closest("[data-modal-close='overlay']");
     const closeButton = event.target.closest("[data-modal-close='button']");
-    const confirmImportButton = event.target.closest(
-        "[data-action='confirm-import']",
-    );
+    const confirmImportButton = event.target.closest("[data-action='confirm-import']");
+    const copyLinkBtn = event.target.closest("[data-action='copy-link']");
+
     if (event.target === overlay || closeButton) {
         closeModal();
         return;
     }
 
     if (confirmImportButton) {
-        confirmImport();
+        handleImport();
+        return;
+    }
+
+    // ── Copy tracking URL to clipboard ───────────────────────────────────
+    if (copyLinkBtn) {
+        const url = copyLinkBtn.dataset.link;
+        if (!url) return;
+
+        copyTrackingLink(url).then(() => {
+            // Brief visual confirmation — swap icon+text for 1.5 s
+            const span = copyLinkBtn.querySelector('span');
+            if (span) {
+                span.textContent = 'Copied!';
+                setTimeout(() => { span.textContent = 'Copy'; }, 1500);
+            }
+        }).catch(() => {
+            const span = copyLinkBtn.querySelector('span');
+            if (span) {
+                span.textContent = 'Failed';
+                setTimeout(() => { span.textContent = 'Copy'; }, 1500);
+            }
+        });
     }
 }
 
@@ -653,7 +679,7 @@ function handleModalChange(event) {
 
 function handleModalSubmit(event) {
     if (event.target.id === "add-order-form") {
-        handleAddOrderSubmit(event);
+        handleAddOrder(event);
     }
 }
 
@@ -676,7 +702,7 @@ async function handleImportFileChange(event) {
     refreshIcons();
 }
 
-async function handleAddOrderSubmit(event) {
+async function handleAddOrder(event) {
     event.preventDefault();
     const formData = new FormData(event.target);
 
@@ -687,7 +713,30 @@ async function handleAddOrderSubmit(event) {
     }
 
     state.addForm = Object.fromEntries(formData.entries());
-    await OrdersApi.createOrder(state.addForm);
+    
+    try {
+        const paymentType = state.addForm.paymentType === "COD" ? "COD" : "prepaid";
+        const backendPayload = {
+            customer_name: state.addForm.customerName?.trim(),
+            customer_phone: state.addForm.customerPhone?.trim(),
+            customer_email: state.addForm.customerEmail?.trim() || null,
+            delivery_address: state.addForm.address?.trim(),
+            lat: Number(state.addForm.latitude),
+            lng: Number(state.addForm.longitude),
+            weight_kg: Number(state.addForm.weightKg) || 0,
+            volume_m3: Number(state.addForm.volumeM3) || 0,
+            payment_type: paymentType,
+            cod_amount: paymentType === "COD" ? Number(state.addForm.codAmount) || 0 : null,
+            priority: state.addForm.priority === "High" || state.addForm.priority === "Urgent" ? "express" : "normal",
+            delivery_preference: state.addForm.paymentWindow?.trim() || null,
+            notes: state.addForm.notes?.trim() || null,
+        };
+        await api.post("http://localhost:8000/api/v1/orders", backendPayload);
+    } catch (error) {
+        console.error("Failed to create order via api-handler:", error);
+    }
+
+    // Refresh logic
     state.orders = await OrdersApi.getOrders();
     state.currentPage = 1;
     state.addForm = null;
@@ -813,7 +862,7 @@ function closeModal() {
     renderModal();
 }
 
-async function confirmImport() {
+async function handleImport() {
     if (!state.importFile) {
         return;
     }
@@ -825,20 +874,30 @@ async function confirmImport() {
     }
 
     try {
-        const result = await OrdersApi.importOrders(state.importFile);
+        const formData = new FormData();
+        const extension = state.importFile.name.split(".").pop().toLowerCase();
+        let format = "csv";
+        if (extension === "xml") format = "xml";
+        
+        formData.append("file", state.importFile);
+        formData.append("format", format);
+
+        const response = await api.post("http://localhost:8000/api/v1/orders/import", formData);
+        const result = response.data?.data || {};
         
         if (result.errors && result.errors.length > 0) {
-            alert(`Imported ${result.imported} orders with some errors:\n${result.errors.slice(0, 5).join('\n')}${result.errors.length > 5 ? '\n...' : ''}`);
+            alert(`Imported ${result.imported || 0} orders with some errors:\n${result.errors.slice(0, 5).join('\n')}${result.errors.length > 5 ? '\n...' : ''}`);
         } else {
-            alert(`Successfully imported ${result.imported} orders.`);
+            alert(`Successfully imported ${result.imported || 0} orders.`);
         }
 
+        // Refresh logic
         state.orders = await OrdersApi.getOrders();
         state.currentPage = 1;
         closeModal();
         renderPage();
     } catch (error) {
-        alert("Import failed: " + error.message);
+        alert("Import failed: " + (error.data?.message || error.message));
         if (confirmBtn) {
             confirmBtn.disabled = false;
             confirmBtn.textContent = "Confirm Import";

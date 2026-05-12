@@ -6,11 +6,126 @@
 //   which call GET /customer-portal/orders/{token} and
 //   GET /customer-portal/orders/{token}/tracking on the Laravel backend.
 //   Customer preferences (delivery instructions) are embedded in the order.
+//
+// MAP (2026-05-12):
+//   Leaflet map is initialised inside #aa-tracking-map (replaces the SVG
+//   pin/ripple placeholder). invalidateSize() fires after 500 ms to prevent
+//   the gray-tile bug in dynamically-injected SPA views.
 // ════════════════════════════════════════════════════════════════════════
 
 import { fetchOrder, fetchTracking } from '../../services/api/customer-portal.js';
 
 let cleanups = [];
+
+/** @type {import('leaflet').Map|null} */
+let trackingMap = null;
+
+// ── Leaflet loader ───────────────────────────────────────────────────────
+
+/**
+ * loadLeaflet()
+ *
+ * Dynamically injects the Leaflet.js script (if not already loaded).
+ * Returns a Promise that resolves once `window.L` is available.
+ *
+ * @returns {Promise<void>}
+ */
+function loadLeaflet() {
+  return new Promise((resolve, reject) => {
+    if (window.L) { resolve(); return; }
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Failed to load Leaflet.js'));
+    document.head.appendChild(script);
+  });
+}
+
+// ── Map initialiser ──────────────────────────────────────────────────────
+
+/**
+ * initMap(driverCoords, destCoords, driverName)
+ *
+ * Initialises a Leaflet map inside `#aa-tracking-map`.
+ * Guards against "Map container is already initialized" by calling
+ * .remove() on any existing instance first.
+ *
+ * invalidateSize() is called after 500 ms — this is the reliable fix
+ * for the gray / blank tile bug when the container is inside a
+ * dynamically-injected SPA view that hasn't fully painted yet.
+ *
+ * @param {[number,number]} driverCoords  [lat, lng] of the driver
+ * @param {[number,number]} destCoords    [lat, lng] of the destination
+ * @param {string}          driverName    Label shown in the driver popup
+ * @returns {import('leaflet').Map}       The initialised map instance
+ */
+function initMap(driverCoords, destCoords, driverName) {
+  const container = document.getElementById('aa-tracking-map');
+  if (!container) return null;
+
+  // ── Destroy any previous instance
+  if (trackingMap !== null) {
+    trackingMap.remove();
+    trackingMap = null;
+  }
+
+  // ── Create map
+  trackingMap = L.map('aa-tracking-map', {
+    zoomControl: false,
+    attributionControl: false,
+  });
+  window.trackingMap = trackingMap;
+
+  // ── OSM tile layer — must be added to the map instance
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+  }).addTo(trackingMap);
+
+  setTimeout(() => { 
+     if (window.trackingMap) { 
+         window.trackingMap.invalidateSize(); 
+     } 
+  }, 500);
+
+  // ── Driver marker (truck emoji DivIcon)
+  const driverIcon = L.divIcon({
+    className: '',
+    html: `<div class="it-lf-driver-icon">🚚</div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+  });
+
+  L.marker(driverCoords, { icon: driverIcon })
+    .addTo(trackingMap)
+    .bindPopup(`<strong>${driverName}</strong><br>Driver location`);
+
+  // ── Destination marker (pin emoji DivIcon)
+  const destIcon = L.divIcon({
+    className: '',
+    html: `<div class="it-lf-dest-icon">📍</div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+  });
+
+  L.marker(destCoords, { icon: destIcon })
+    .addTo(trackingMap)
+    .bindPopup('<strong>Your location</strong><br>Delivery destination');
+
+  // ── Dashed route polyline
+  const routeLine = L.polyline([driverCoords, destCoords], {
+    color: '#0d9488',
+    weight: 3,
+    dashArray: '8, 8',
+    opacity: 0.85,
+  }).addTo(trackingMap);
+
+  // ── Fit both markers
+  trackingMap.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
+
+  return trackingMap;
+}
+
+// ── Lifecycle: init ──────────────────────────────────────────────────────
 
 export async function init(root) {
   cleanups = [];
@@ -28,6 +143,19 @@ export async function init(root) {
   const orderData = tracking
     ? { ...order, driver: { ...order?.driver, ...tracking?.driver }, ...tracking }
     : order;
+
+  if (!orderData) {
+    root.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                  height:100%;padding:32px;text-align:center;gap:16px;">
+        <h2 style="font-size:1.1rem;font-weight:700;color:#1e293b;">Missing Tracking Code</h2>
+        <p style="font-size:0.9rem;color:#64748b;max-width:280px;">
+          Please use the tracking link provided in your SMS/Email
+        </p>
+      </div>
+    `;
+    return;
+  }
 
   // Preferences are embedded in the order by the backend
   const preferences = orderData?.preferences ?? null;
@@ -111,7 +239,24 @@ export async function init(root) {
     cleanups.push(() => msgBtn.removeEventListener('click', handleMsg));
   }
 
-  // ── 5. Re-center button ──────────────────────────────────────────────
+  // ── 5. Leaflet map ───────────────────────────────────────────────────
+  //    Driver coords from API, fall back to mock Cairo coordinates.
+  const driverLat  = orderData?.driver?.lat    ?? 30.0626;
+  const driverLng  = orderData?.driver?.lng    ?? 31.2497;
+  const destLat    = orderData?.destinationLat ?? 30.0444;
+  const destLng    = orderData?.destinationLng ?? 31.2357;
+  const driverName = orderData?.driver?.name   ?? 'Driver';
+
+  try {
+    await loadLeaflet();
+    initMap([driverLat, driverLng], [destLat, destLng], driverName);
+  } catch (err) {
+    console.warn('[ArrivingAlerts] Leaflet failed to load — map will be hidden.', err);
+    const mapCard = root.querySelector('.aa-map-card');
+    if (mapCard) mapCard.style.display = 'none';
+  }
+
+  // ── 6. Re-center button ──────────────────────────────────────────────
   const recenterBtn = root.querySelector('.aa-map-recenter');
   if (recenterBtn) {
     const handleRecenter = () => {
@@ -120,6 +265,11 @@ export async function init(root) {
         if (!document.body.contains(root)) return;
         recenterBtn.style.transform = '';
       }, 300);
+
+      // Re-center the live Leaflet map on the driver's position
+      if (trackingMap) {
+        trackingMap.setView([driverLat, driverLng], trackingMap.getZoom());
+      }
     };
     recenterBtn.addEventListener('click', handleRecenter);
     cleanups.push(() => recenterBtn.removeEventListener('click', handleRecenter));
@@ -129,5 +279,13 @@ export async function init(root) {
 export function destroy(root) {
   cleanups.forEach(fn => fn());
   cleanups = [];
+
+  // Remove the Leaflet instance to prevent "container already initialized"
+  // error if the user returns to this view in the same session.
+  if (trackingMap !== null) {
+    trackingMap.remove();
+    trackingMap = null;
+  }
+
   root.innerHTML = '';
 }
