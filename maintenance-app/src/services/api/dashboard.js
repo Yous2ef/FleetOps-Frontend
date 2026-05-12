@@ -249,7 +249,8 @@ function shapeWorkOrders(rows) {
         : "routine";
 
     // Mechanic name
-    const mechanicName = r.mechanic?.name ?? r.assigned_mechanic ?? null;
+    const mechanicName =
+      r.mechanic?.user?.name ?? r.mechanic?.name ?? r.assigned_mechanic ?? null;
 
     // Normalise status: open / in-progress / assigned / resolved / closed
     const rawStatus = (r.status ?? "open")
